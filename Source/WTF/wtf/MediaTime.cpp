@@ -60,6 +60,10 @@ static int32_t signum(int64_t val)
 
 const int32_t MediaTime::MaximumTimeScale = 0x7fffffffL;
 
+#if USE(GSTREAMER)
+const double MediaTime::FuzzinessThreshold = 0.00003;
+#endif
+
 MediaTime::MediaTime()
     : m_timeValue(0)
     , m_timeScale(DefaultTimeScale)
@@ -401,7 +405,11 @@ MediaTime::ComparisonFlags MediaTime::compare(const MediaTime& rhs) const
         return LessThan;
 
     if (hasDoubleValue() && rhs.hasDoubleValue()) {
+#if USE(GSTREAMER)
+        if (fabs(m_timeValueAsDouble - rhs.m_timeValueAsDouble) <= FuzzinessThreshold)
+#else
         if (m_timeValueAsDouble == rhs.m_timeValueAsDouble)
+#endif
             return EqualTo;
 
         return m_timeValueAsDouble < rhs.m_timeValueAsDouble ? LessThan : GreaterThan;

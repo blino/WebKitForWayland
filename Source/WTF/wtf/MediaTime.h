@@ -119,6 +119,10 @@ public:
 
     static const int32_t DefaultTimeScale = 10000000;
     static const int32_t MaximumTimeScale;
+#if USE(GSTREAMER)
+    // Maximum allowed difference in seconds between two MediaTime to be considered equal when using fuzzy comparisons.
+    static const double FuzzinessThreshold;
+#endif
 
 private:
     void setTimeScale(int32_t);
