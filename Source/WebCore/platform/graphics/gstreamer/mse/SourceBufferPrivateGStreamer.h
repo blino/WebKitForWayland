@@ -71,6 +71,7 @@ public:
 
     void setReadyForMoreSamples(bool);
     void notifyReadyForMoreSamples();
+    ContentType type() { return m_type; }
 
     void didReceiveInitializationSegment(const SourceBufferPrivateClient::InitializationSegment&);
     void didReceiveSample(MediaSample&);

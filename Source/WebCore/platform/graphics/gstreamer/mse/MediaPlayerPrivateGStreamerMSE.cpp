@@ -716,7 +716,9 @@ static HashSet<String, ASCIICaseInsensitiveHash>& mimeTypeCache()
         HashSet<String, ASCIICaseInsensitiveHash> set;
         const char* mimeTypes[] = {
             "video/mp4",
-            "audio/mp4"
+            "video/webm",
+            "audio/mp4",
+            "audio/webm"
         };
         for (auto& type : mimeTypes)
             set.add(type);
@@ -788,10 +790,6 @@ MediaPlayer::SupportsType MediaPlayerPrivateGStreamerMSE::supportsType(const Med
 {
     MediaPlayer::SupportsType result = MediaPlayer::IsNotSupported;
     if (!parameters.isMediaSource)
-        return result;
-
-    // Disable VPX/Opus on MSE for now, mp4/avc1 seems way more reliable currently.
-    if (parameters.type.endsWith("webm"))
         return result;
 
     // YouTube TV provides empty types for some videos and we want to be selected as best media engine for them.

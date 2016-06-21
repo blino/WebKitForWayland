@@ -123,7 +123,25 @@ AppendPipeline::AppendPipeline(Ref<MediaSourceClientGStreamerMSE> mediaSourceCli
     // We assign the created instances here instead of adoptRef() because gst_bin_add_many()
     // below will already take the initial reference and we need an additional one for us.
     m_appsrc = gst_element_factory_make("appsrc", nullptr);
-    m_demux = gst_element_factory_make("qtdemux", nullptr);
+
+    const String& type = m_sourceBufferPrivate->type().type();
+    bool isTypeSupported = false;
+
+    if (type.endsWith("mp4")) {
+        m_demux = gst_element_factory_make("qtdemux", nullptr);
+        if (m_demux)
+            isTypeSupported = true;
+    } else if (type.endsWith("webm")) {
+        m_demux = gst_element_factory_make("matroskademux", nullptr);
+        if (m_demux)
+            isTypeSupported = true;
+    }
+
+    if (!isTypeSupported) {
+        GST_ERROR("Unsupported type: %s", type.utf8().data());
+        return;
+    }
+
     m_appsink = gst_element_factory_make("appsink", nullptr);
 
     gst_app_sink_set_emit_signals(GST_APP_SINK(m_appsink.get()), TRUE);
