@@ -237,7 +237,18 @@ void PlaybackPipeline::attachTrack(RefPtr<SourceBufferPrivateGStreamer> sourceBu
         gst_element_add_pad(stream->parser, gst_ghost_pad_new("src", pad.get()));
     } else if (!g_strcmp0(mediaType, "video/x-vp9"))
         stream->parser = nullptr;
-    else {
+    else if (!g_strcmp0(mediaType, "audio/x-opus")) {
+        GstElement* parser = gst_element_factory_make("opusparse", nullptr);
+
+        stream->parser = gst_bin_new(parserBinName.get());
+        gst_bin_add(GST_BIN(stream->parser), parser);
+
+        GRefPtr<GstPad> pad = adoptGRef(gst_element_get_static_pad(parser, "sink"));
+        gst_element_add_pad(stream->parser, gst_ghost_pad_new("sink", pad.get()));
+
+        pad = adoptGRef(gst_element_get_static_pad(parser, "src"));
+        gst_element_add_pad(stream->parser, gst_ghost_pad_new("src", pad.get()));
+    } else {
         GST_ERROR_OBJECT(stream->parent, "Unsupported media format: %s", mediaType);
         return;
     }
