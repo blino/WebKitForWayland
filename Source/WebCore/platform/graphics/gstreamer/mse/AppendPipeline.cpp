@@ -104,6 +104,9 @@ AppendPipeline::AppendPipeline(Ref<MediaSourceClientGStreamerMSE> mediaSourceCli
     , m_appendState(AppendState::NotStarted)
     , m_abortPending(false)
     , m_streamType(Unknown)
+    , m_sampleDuration(MediaTime::invalidTime())
+    , m_lastPts(MediaTime::invalidTime())
+    , m_lastDts(MediaTime::invalidTime())
 {
     ASSERT(WTF::isMainThread());
 
@@ -642,6 +645,14 @@ void AppendPipeline::parseDemuxerSrcPadCaps(GstCaps* demuxerSrcPadCaps)
                 m_streamType = WebCore::MediaSourceStreamTypeGStreamer::Text;
         }
     }
+
+    gint framerateNumerator, framerateDenominator;
+    if (gst_structure_get_fraction(structure, "framerate", &framerateNumerator, &framerateDenominator) && framerateNumerator)
+        m_sampleDuration = MediaTime::createWithFloat(float(framerateDenominator) / float(framerateNumerator));
+    else if (gst_structure_get_int(structure, "rate", &framerateNumerator))
+        m_sampleDuration = MediaTime::createWithFloat(float(1) / float(framerateNumerator));
+    else
+        m_sampleDuration = MediaTime::invalidTime();
 }
 
 void AppendPipeline::appsinkCapsChanged()
@@ -715,6 +726,36 @@ void AppendPipeline::appsinkNewSample(GstSample* sample)
             m_flowReturn = GST_FLOW_OK;
             m_newSampleCondition.notifyOne();
             return;
+        }
+
+        if (sample) {
+            GstBuffer* buffer = gst_sample_get_buffer(sample);
+            if (buffer) {
+                if (!GST_BUFFER_DURATION_IS_VALID(buffer)) {
+                    if (m_sampleDuration.isValid()) {
+                        // Some containers like webm and audio/x-opus don't supply a duration. Let's use the one supplied by the caps.
+                        GST_BUFFER_DURATION(buffer) = toGstClockTime(m_sampleDuration.toDouble());
+                    } else if (m_lastPts.isValid()){
+                        m_sampleDuration = MediaTime(GST_BUFFER_PTS(buffer), GST_SECOND) - m_lastPts;
+                        GST_BUFFER_DURATION(buffer) = toGstClockTime(m_sampleDuration.toDouble());
+                    } else if (GST_BUFFER_PTS_IS_VALID(buffer)) {
+                        // Some containers like webm don't supply a duration. Let's assume 60fps and let the gap sample hack fill the gaps if the duration was actually longer.
+                        // The duration for the next samples will be computed using PTS differences.
+                        GST_BUFFER_DURATION(buffer) = toGstClockTime(1.0/60.0);
+                    }
+                }
+
+                if (!GST_BUFFER_DTS_IS_VALID(buffer) && GST_BUFFER_PTS_IS_VALID(buffer)) {
+                    // If we had a last DTS and the PTS hasn't varied too much (continuous samples), DTS++.
+                    if (m_lastDts.isValid() && abs(m_lastPts + MediaTime(GST_BUFFER_DURATION(buffer), GST_SECOND) - MediaTime(GST_BUFFER_PTS(buffer), GST_SECOND)) < MediaTime::createWithFloat(0.5))
+                        GST_BUFFER_DTS(buffer) = toGstClockTime((m_lastDts + MediaTime(GST_BUFFER_DURATION(buffer), GST_SECOND)).toDouble());
+                    else
+                        GST_BUFFER_DTS(buffer) = toGstClockTime((MediaTime(GST_BUFFER_PTS(buffer), GST_SECOND) + MediaTime(GST_BUFFER_DURATION(buffer), GST_SECOND)).toDouble());
+                }
+
+                m_lastPts = MediaTime(GST_BUFFER_PTS(buffer), GST_SECOND);
+                m_lastDts = MediaTime(GST_BUFFER_DTS(buffer), GST_SECOND);
+            }
         }
 
         RefPtr<GStreamerMediaSample> mediaSample = WebCore::GStreamerMediaSample::create(sample, m_presentationSize, trackId());
