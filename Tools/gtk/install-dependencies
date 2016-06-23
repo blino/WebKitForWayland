@@ -131,6 +131,7 @@ function installDependenciesWithApt {
         libtheora-dev \
         libtool \
         libvorbis-dev \
+        libvpx-dev \
         libwebp-dev \
         libxcomposite-dev \
         libxt-dev \
@@ -274,6 +275,7 @@ function installDependenciesWithPacman {
         libtheora \
         libtool \
         libvorbis \
+        libvpx \
         libwebp \
         libxcomposite \
         libxt \
@@ -390,6 +392,7 @@ function installDependenciesWithDnf {
         libpng-devel \
         libsecret-devel \
         libsoup-devel \
+        libvpx-devel \
         libv4l-devel \
         libwebp-devel \
         libwayland-client-devel \
