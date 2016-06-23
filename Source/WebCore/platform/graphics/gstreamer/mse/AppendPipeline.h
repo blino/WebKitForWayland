@@ -147,6 +147,11 @@ private:
     RefPtr<WebCore::TrackPrivateBase> m_oldTrack;
     RefPtr<WebCore::TrackPrivateBase> m_track;
 
+    // Auxiliary attributes to compute the sample duration when GStreamer provides an invalid one.
+    MediaTime m_sampleDuration;
+    MediaTime m_lastPts;
+    MediaTime m_lastDts;
+
     GRefPtr<GstBuffer> m_pendingBuffer;
     GRefPtr<GstBuffer> m_pendingKey;
 };
