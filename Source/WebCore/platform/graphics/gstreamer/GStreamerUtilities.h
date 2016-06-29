@@ -24,6 +24,7 @@
 #include <gst/gst.h>
 #include <gst/video/video-format.h>
 #include <gst/video/video-info.h>
+#include <wtf/MediaTime.h>
 
 namespace WebCore {
 
@@ -63,6 +64,8 @@ void unmapGstBuffer(GstBuffer*);
 bool initializeGStreamer();
 unsigned getGstPlayFlag(const char* nick);
 GstClockTime toGstClockTime(float time);
+GstClockTime toGstClockTime(MediaTime time);
+
 bool gstRegistryHasElementForMediaType(GList* elementFactories, const char* capsString);
 GstElement* getPipeline(GstElement*);
 

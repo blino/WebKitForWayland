@@ -190,6 +190,24 @@ GstClockTime toGstClockTime(float time)
     return GST_TIMEVAL_TO_TIME(timeValue);
 }
 
+GstClockTime toGstClockTime(MediaTime time)
+{
+    if (time.isInvalid() || time.isIndefinite() || time.isPositiveInfinite() || time.isNegativeInfinite())
+        return GST_CLOCK_TIME_NONE;
+    if (time.hasDoubleValue()) {
+        double scaledTimeAsDouble = time.toDouble() * GST_SECOND;
+        if (scaledTimeAsDouble > std::numeric_limits<GstClockTime>::max())
+            return GST_CLOCK_TIME_NONE;
+        else
+            return GstClockTime(scaledTimeAsDouble);
+    } else if (GST_SECOND == time.timeScale())
+        return GstClockTime(time.timeValue());
+    else if (GST_SECOND > time.timeScale())
+        return GstClockTime(time.timeValue() * (GST_SECOND / time.timeScale()));
+    else
+        return GstClockTime((time.timeValue() * GST_SECOND) / time.timeScale());
+}
+
 bool gstRegistryHasElementForMediaType(GList* elementFactories, const char* capsString)
 {
     GRefPtr<GstCaps> caps = adoptGRef(gst_caps_from_string(capsString));
