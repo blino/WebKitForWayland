@@ -648,9 +648,9 @@ void AppendPipeline::parseDemuxerSrcPadCaps(GstCaps* demuxerSrcPadCaps)
 
     gint framerateNumerator, framerateDenominator;
     if (gst_structure_get_fraction(structure, "framerate", &framerateNumerator, &framerateDenominator) && framerateNumerator)
-        m_sampleDuration = MediaTime::createWithFloat(float(framerateDenominator) / float(framerateNumerator));
+        m_sampleDuration = MediaTime(GST_SECOND * framerateDenominator / framerateNumerator, GST_SECOND);
     else if (gst_structure_get_int(structure, "rate", &framerateNumerator))
-        m_sampleDuration = MediaTime::createWithFloat(float(1) / float(framerateNumerator));
+        m_sampleDuration = MediaTime(GST_SECOND / framerateNumerator, GST_SECOND);
     else
         m_sampleDuration = MediaTime::invalidTime();
 }
@@ -734,23 +734,23 @@ void AppendPipeline::appsinkNewSample(GstSample* sample)
                 if (!GST_BUFFER_DURATION_IS_VALID(buffer)) {
                     if (m_sampleDuration.isValid()) {
                         // Some containers like webm and audio/x-opus don't supply a duration. Let's use the one supplied by the caps.
-                        GST_BUFFER_DURATION(buffer) = toGstClockTime(m_sampleDuration.toDouble());
+                        GST_BUFFER_DURATION(buffer) = toGstClockTime(m_sampleDuration);
                     } else if (m_lastPts.isValid()){
                         m_sampleDuration = MediaTime(GST_BUFFER_PTS(buffer), GST_SECOND) - m_lastPts;
-                        GST_BUFFER_DURATION(buffer) = toGstClockTime(m_sampleDuration.toDouble());
+                        GST_BUFFER_DURATION(buffer) = toGstClockTime(m_sampleDuration);
                     } else if (GST_BUFFER_PTS_IS_VALID(buffer)) {
                         // Some containers like webm don't supply a duration. Let's assume 60fps and let the gap sample hack fill the gaps if the duration was actually longer.
                         // The duration for the next samples will be computed using PTS differences.
-                        GST_BUFFER_DURATION(buffer) = toGstClockTime(1.0/60.0);
+                        GST_BUFFER_DURATION(buffer) = toGstClockTime(GST_SECOND/60.0);
                     }
                 }
 
                 if (!GST_BUFFER_DTS_IS_VALID(buffer) && GST_BUFFER_PTS_IS_VALID(buffer)) {
                     // If we had a last DTS and the PTS hasn't varied too much (continuous samples), DTS++.
-                    if (m_lastDts.isValid() && abs(m_lastPts + MediaTime(GST_BUFFER_DURATION(buffer), GST_SECOND) - MediaTime(GST_BUFFER_PTS(buffer), GST_SECOND)) < MediaTime::createWithFloat(0.5))
-                        GST_BUFFER_DTS(buffer) = toGstClockTime((m_lastDts + MediaTime(GST_BUFFER_DURATION(buffer), GST_SECOND)).toDouble());
+                    if (m_lastDts.isValid() && abs(m_lastPts + MediaTime(GST_BUFFER_DURATION(buffer), GST_SECOND) - MediaTime(GST_BUFFER_PTS(buffer), GST_SECOND)) < MediaTime(GST_SECOND / 2, GST_SECOND))
+                        GST_BUFFER_DTS(buffer) = toGstClockTime(m_lastDts + MediaTime(GST_BUFFER_DURATION(buffer), GST_SECOND));
                     else
-                        GST_BUFFER_DTS(buffer) = toGstClockTime((MediaTime(GST_BUFFER_PTS(buffer), GST_SECOND) + MediaTime(GST_BUFFER_DURATION(buffer), GST_SECOND)).toDouble());
+                        GST_BUFFER_DTS(buffer) = toGstClockTime(MediaTime(GST_BUFFER_PTS(buffer), GST_SECOND) + MediaTime(GST_BUFFER_DURATION(buffer), GST_SECOND));
                 }
 
                 m_lastPts = MediaTime(GST_BUFFER_PTS(buffer), GST_SECOND);
