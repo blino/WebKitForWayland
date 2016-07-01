@@ -440,7 +440,11 @@ MediaTime::ComparisonFlags MediaTime::compare(const MediaTime& rhs) const
     int64_t lhsFactor = lhsRemain * b.m_timeScale;
     int64_t rhsFactor = rhsRemain * a.m_timeScale;
 
+#if USE(GSTREAMER)
+    if (static_cast<int64_t>(llabs(lhsFactor - rhsFactor)) <= static_cast<int64_t>(FuzzinessThreshold * a.m_timeScale * b.m_timeScale))
+#else
     if (lhsFactor == rhsFactor)
+#endif
         return EqualTo;
     return lhsFactor > rhsFactor ? GreaterThan : LessThan;
 }
