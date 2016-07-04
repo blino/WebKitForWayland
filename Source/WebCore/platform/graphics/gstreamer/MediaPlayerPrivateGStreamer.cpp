@@ -156,7 +156,6 @@ MediaPlayerPrivateGStreamer::MediaPlayerPrivateGStreamer(MediaPlayer* player)
     , m_maxTimeLoaded(0)
     , m_preload(player->preload())
     , m_delayingLoad(false)
-    , m_mediaDurationKnown(true)
     , m_maxTimeLoadedAtLastDidLoadingProgress(0)
     , m_hasVideo(false)
     , m_hasAudio(false)
@@ -498,15 +497,6 @@ float MediaPlayerPrivateGStreamer::duration() const
 
     if (m_errorOccured)
         return 0.0f;
-
-    // Media duration query failed already, don't attempt new useless queries.
-    if (!m_mediaDurationKnown)
-        return numeric_limits<float>::infinity();
-
-#if !USE(FUSION_SINK)
-    if (m_mediaDuration)
-        return m_mediaDuration;
-#endif
 
     gint64 timeLength = 0;
 
@@ -1806,7 +1796,6 @@ void MediaPlayerPrivateGStreamer::didEnd()
     // position is not always reported as 0 for instance.
     float now = currentTime();
     if (now > 0 && now <= duration() && m_mediaDuration != now) {
-        m_mediaDurationKnown = true;
         m_mediaDuration = now;
         m_player->durationChanged();
     }
@@ -1823,9 +1812,7 @@ void MediaPlayerPrivateGStreamer::didEnd()
 
 void MediaPlayerPrivateGStreamer::cacheDuration()
 {
-    if (m_mediaDuration || !m_mediaDurationKnown)
-        return;
-
+    LOG_MEDIA_MESSAGE("Caching media duration");
     float newDuration = duration();
     if (std::isinf(newDuration)) {
         // Only pretend that duration is not available if the the query failed in a stable pipeline state.
@@ -1856,7 +1843,8 @@ void MediaPlayerPrivateGStreamer::durationChanged()
     // Avoid emiting durationchanged in the case where the previous
     // duration was 0 because that case is already handled by the
     // HTMLMediaElement.
-    if (previousDuration && m_mediaDuration != previousDuration)
+    LOG_MEDIA_MESSAGE("Previous duration: %f, new duration: %f", previousDuration, m_mediaDuration);
+    if (m_mediaDuration != previousDuration)
         m_player->durationChanged();
 }
 
