@@ -2183,6 +2183,8 @@ void MediaPlayerPrivateGStreamer::createGSTPlayBin()
     unsigned flagNativeVideo = getGstPlayFlag("native-video");
     g_object_set(m_pipeline.get(), "flags", flagText | flagAudio | flagVideo | flagNativeVideo, nullptr);
 
+    g_object_set(m_pipeline.get(), "ring-buffer-max-size", static_cast<guint64>(10 * 1024 * 1024), nullptr);
+
     GRefPtr<GstBus> bus = adoptGRef(gst_pipeline_get_bus(GST_PIPELINE(m_pipeline.get())));
     gst_bus_set_sync_handler(bus.get(), [](GstBus*, GstMessage* message, gpointer userData) {
         auto& player = *static_cast<MediaPlayerPrivateGStreamer*>(userData);
