@@ -718,7 +718,7 @@ static HashSet<String, ASCIICaseInsensitiveHash>& mimeTypeCache()
             "video/mp4",
             "video/webm",
             "audio/mp4",
-            "audio/webm"
+            //"audio/webm"
         };
         for (auto& type : mimeTypes)
             set.add(type);
