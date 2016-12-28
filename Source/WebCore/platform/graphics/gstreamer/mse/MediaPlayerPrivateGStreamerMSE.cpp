@@ -716,12 +716,21 @@ static HashSet<String, ASCIICaseInsensitiveHash>& mimeTypeCache()
         HashSet<String, ASCIICaseInsensitiveHash> set;
         const char* mimeTypes[] = {
             "video/mp4",
-            "video/webm",
             "audio/mp4",
             //"audio/webm"
         };
         for (auto& type : mimeTypes)
             set.add(type);
+
+        GList* videoDecoderFactories = gst_element_factory_list_get_elements(GST_ELEMENT_FACTORY_TYPE_DECODER | GST_ELEMENT_FACTORY_TYPE_MEDIA_VIDEO, GST_RANK_MARGINAL);
+
+        if (gstRegistryHasElementForMediaType(videoDecoderFactories, "video/x-vp8")
+            || gstRegistryHasElementForMediaType(videoDecoderFactories, "video/x-vp9")
+            || gstRegistryHasElementForMediaType(videoDecoderFactories, "video/x-vp10"))
+            set.add(AtomicString("video/webm"));
+
+        gst_plugin_feature_list_free(videoDecoderFactories);
+
         return set;
     }();
     return cache;
