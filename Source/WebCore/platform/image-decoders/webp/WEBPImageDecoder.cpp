@@ -50,6 +50,7 @@ WEBPImageDecoder::WEBPImageDecoder(AlphaOption alphaOption, GammaAndColorProfile
     , m_decoder(0)
     , m_hasAlpha(false)
 {
+    WebPInitDecBuffer(&m_decoderBuffer);
 }
 
 WEBPImageDecoder::~WEBPImageDecoder()
@@ -135,13 +136,16 @@ bool WEBPImageDecoder::decode(bool onlySize)
         WEBP_CSP_MODE mode = outputMode(m_hasAlpha);
         if (!m_premultiplyAlpha)
             mode = outputMode(false);
-        int rowStride = size().width() * sizeof(RGBA32);
-        uint8_t* output = reinterpret_cast<uint8_t*>(buffer.backingStore()->pixelAt(0, 0));
-        int outputSize = size().height() * rowStride;
-        m_decoder = WebPINewRGB(mode, output, outputSize, rowStride);
+        m_decoderBuffer.colorspace = mode;
+        m_decoderBuffer.u.RGBA.stride = size().width() * sizeof(RGBA32);
+        m_decoderBuffer.u.RGBA.size = m_decoderBuffer.u.RGBA.stride * size().height();
+        m_decoderBuffer.is_external_memory = 1;
+        m_decoder = WebPINewDecoder(&m_decoderBuffer);
         if (!m_decoder)
             return setFailed();
     }
+
+    m_decoderBuffer.u.RGBA.rgba = reinterpret_cast<uint8_t*>(buffer.backingStore()->pixelAt(0, 0));
 
     switch (WebPIUpdate(m_decoder, dataBytes, dataSize)) {
     case VP8_STATUS_OK:
