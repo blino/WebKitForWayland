@@ -285,26 +285,19 @@ private:
     Lock m_prSessionMutex;
 #endif
 
+    ImageOrientation m_videoSourceOrientation;
 #if ENABLE(LEGACY_ENCRYPTED_MEDIA)
     std::unique_ptr<CDMSession> createSession(const String&, CDMSessionClient*) override;
     CDMSession* m_cdmSession;
 #endif
-#if ENABLE(LEGACY_ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA)
+#if ENABLE(LEGACY_ENCRYPTED_MEDIA_V1) || ENABLE(LEGACY_ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA)
     Lock m_protectionMutex;
     Condition m_protectionCondition;
     String m_lastGenerateKeyRequestKeySystemUuid;
     HashSet<uint32_t> m_handledProtectionEvents;
 #endif
-    ImageOrientation m_videoSourceOrientation;
 #if USE(GSTREAMER_GL)
     std::unique_ptr<VideoTextureCopierGStreamer> m_videoTextureCopier;
-#endif
-
-#if ENABLE(LEGACY_ENCRYPTED_MEDIA_V1) || ENABLE(LEGACY_ENCRYPTED_MEDIA)
-    Lock m_protectionMutex;
-    Condition m_protectionCondition;
-    String m_lastGenerateKeyRequestKeySystemUuid;
-    HashSet<uint32_t> m_handledProtectionEvents;
 #endif
 
 #if ENABLE(LEGACY_ENCRYPTED_MEDIA_V1)
