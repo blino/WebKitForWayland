@@ -708,6 +708,36 @@ void MediaPlayerPrivateGStreamerMSE::durationChanged()
     }
 }
 
+static HashSet<String, ASCIICaseInsensitiveHash>& codecsCache()
+{
+    static NeverDestroyed<HashSet<String, ASCIICaseInsensitiveHash>> cache = []()
+    {
+        initializeGStreamerAndRegisterWebKitMSEElement();
+        HashSet<String, ASCIICaseInsensitiveHash> set;
+        const char* supportedCodecs[] = { "avc*", "mp4a*", "mpeg", "x-h264" };
+        for (auto& codec : supportedCodecs)
+            set.add(codec);
+
+        GList* videoDecoderFactories = gst_element_factory_list_get_elements(GST_ELEMENT_FACTORY_TYPE_DECODER | GST_ELEMENT_FACTORY_TYPE_MEDIA_VIDEO, GST_RANK_MARGINAL);
+        if (gstRegistryHasElementForMediaType(videoDecoderFactories, "video/x-vp8")) {
+            set.add("vp8");
+            set.add("x-vp8");
+        }
+        if (gstRegistryHasElementForMediaType(videoDecoderFactories, "video/x-vp9")) {
+            set.add("vp9");
+            set.add("x-vp9");
+        }
+        if (gstRegistryHasElementForMediaType(videoDecoderFactories, "video/x-vp10")) {
+            set.add("vp10");
+            set.add("x-vp10");
+        }
+        gst_plugin_feature_list_free(videoDecoderFactories);
+
+        return set;
+    }();
+    return cache;
+}
+
 static HashSet<String, ASCIICaseInsensitiveHash>& mimeTypeCache()
 {
     static NeverDestroyed<HashSet<String, ASCIICaseInsensitiveHash>> cache = []()
@@ -770,7 +800,6 @@ void MediaPlayerPrivateGStreamerMSE::trackDetected(RefPtr<AppendPipeline> append
 
 bool MediaPlayerPrivateGStreamerMSE::supportsCodecs(const String& codecs)
 {
-    static Vector<const char*> supportedCodecs = { "avc*", "mp4a*", "mpeg", "x-h264" };
     Vector<String> codecEntries;
     codecs.split(',', false, codecEntries);
 
@@ -783,8 +812,8 @@ bool MediaPlayerPrivateGStreamerMSE::supportsCodecs(const String& codecs)
             codec = codec.substring(slashIndex+1);
 
         const char* codecData = codec.utf8().data();
-        for (const auto& pattern : supportedCodecs) {
-            isCodecSupported = !fnmatch(pattern, codecData, 0);
+        for (const auto& pattern : codecsCache()) {
+            isCodecSupported = !fnmatch(pattern.utf8().data(), codecData, 0);
             if (isCodecSupported)
                 break;
         }
