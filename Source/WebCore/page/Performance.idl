@@ -45,6 +45,8 @@ typedef double DOMHighResTimeStamp;
     readonly attribute PerformanceNavigation navigation;
     readonly attribute PerformanceTiming timing;
 
+    readonly attribute PerformanceMemoryInfo memory;
+
     // https://w3c.github.io/performance-timeline/
     [EnabledAtRuntime=PerformanceTimeline] PerformanceEntryList getEntries();
     [EnabledAtRuntime=PerformanceTimeline] PerformanceEntryList getEntriesByType(DOMString entryType);
