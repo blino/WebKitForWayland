@@ -649,6 +649,7 @@ set(WebCore_NON_SVG_IDL_FILES
     page/NavigatorLanguage.idl
     page/NavigatorOnLine.idl
     page/Performance.idl
+    page/PerformanceMemoryInfo.idl
     page/PerformanceEntry.idl
     page/PerformanceMark.idl
     page/PerformanceMeasure.idl

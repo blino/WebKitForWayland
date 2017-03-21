@@ -40,6 +40,8 @@
 #include "GenericTaskQueue.h"
 #include <wtf/ListHashSet.h>
 
+#include "PerformanceMemoryInfo.h"
+
 namespace WebCore {
 
 class LoadTiming;
@@ -62,6 +64,7 @@ public:
 
     PerformanceNavigation* navigation();
     PerformanceTiming* timing();
+    Ref<PerformanceMemoryInfo> memory() const;
 
     Vector<RefPtr<PerformanceEntry>> getEntries() const;
     Vector<RefPtr<PerformanceEntry>> getEntriesByType(const String& entryType) const;
