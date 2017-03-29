@@ -860,8 +860,7 @@ bool MediaSource::isTypeSupported(const String& type)
     // 5. If the MediaSource does not support the specified combination of media type, media subtype, and codecs then return false.
     // 6. Return true.
     MediaEngineSupportParameters parameters;
-    parameters.type = contentType.type();
-    parameters.codecs = codecs;
+    parameters.type = contentType;
     parameters.isMediaSource = true;
     MediaPlayer::SupportsType supported = MediaPlayer::supportsType(parameters, 0);
 

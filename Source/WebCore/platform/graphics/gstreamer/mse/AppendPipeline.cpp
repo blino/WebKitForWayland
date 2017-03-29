@@ -592,8 +592,9 @@ void AppendPipeline::parseDemuxerSrcPadCaps(GstCaps* demuxerSrcPadCaps)
         }
 
         const gchar* originalMediaType = gst_structure_get_string(structure, "original-media-type");
+        ContentType type(originalMediaType);
 
-        if (!MediaPlayerPrivateGStreamerMSE::supportsCodecs(originalMediaType)) {
+        if (!MediaPlayerPrivateGStreamerMSE::supportsCodecs(type.codecs())) {
             m_presentationSize = WebCore::FloatSize();
             m_streamType = WebCore::MediaSourceStreamTypeGStreamer::Invalid;
         } else if (g_str_has_prefix(originalMediaType, "video/")) {
@@ -624,9 +625,10 @@ void AppendPipeline::parseDemuxerSrcPadCaps(GstCaps* demuxerSrcPadCaps)
 
     if (!sizeConfigured) {
         const char* structureName = gst_structure_get_name(structure);
+        ContentType type(structureName);
         GstVideoInfo info;
 
-        if (!MediaPlayerPrivateGStreamerMSE::supportsCodecs(structureName)) {
+        if (!MediaPlayerPrivateGStreamerMSE::supportsCodecs(type.codecs())) {
             m_presentationSize = WebCore::FloatSize();
             m_streamType = WebCore::MediaSourceStreamTypeGStreamer::Invalid;
         } else if (g_str_has_prefix(structureName, "video/") && gst_video_info_from_caps(&info, demuxerSrcPadCaps)) {

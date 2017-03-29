@@ -502,8 +502,7 @@ std::optional<Vector<MediaKeySystemMediaCapability>> CDM::getSupportedCapabiliti
         // FIXME: Re-enable.
 #if 0
         MediaEngineSupportParameters parameters;
-        parameters.type = contentType.mimeType();
-        parameters.codecs = codecs;
+        parameters.type = ContentType(contentType.mimeType());
         if (true /* !MediaPlayer::supportsType(parameters, nullptr) */) {
             // Try with Media Source:
             parameters.isMediaSource = true;

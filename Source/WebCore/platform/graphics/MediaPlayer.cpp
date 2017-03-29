@@ -290,22 +290,16 @@ static const AtomicString& textPlain()
     return textPlain;
 }
 
-static const AtomicString& codecs()
-{
-    static NeverDestroyed<const AtomicString> codecs("codecs", AtomicString::ConstructFromLiteral);
-    return codecs;
-}
-
 static const MediaPlayerFactory* bestMediaEngineForSupportParameters(const MediaEngineSupportParameters& parameters, const MediaPlayerFactory* current = nullptr)
 {
-    if (parameters.type.isEmpty() && !parameters.isMediaSource && !parameters.isMediaStream)
+    if (parameters.type.type().isEmpty() && !parameters.isMediaSource && !parameters.isMediaStream)
         return nullptr;
 
     // 4.8.10.3 MIME types - In the absence of a specification to the contrary, the MIME type "application/octet-stream"
     // when used with parameters, e.g. "application/octet-stream;codecs=theora", is a type that the user agent knows
     // it cannot render.
-    if (parameters.type == applicationOctetStream()) {
-        if (!parameters.codecs.isEmpty())
+    if (parameters.type.type() == applicationOctetStream()) {
+        if (!parameters.type.codecs().isEmpty())
             return nullptr;
     }
 
@@ -383,8 +377,7 @@ bool MediaPlayer::load(const URL& url, const ContentType& contentType, const Str
     // Protect against MediaPlayer being destroyed during a MediaPlayerClient callback.
     Ref<MediaPlayer> protectedThis(*this);
 
-    m_contentMIMEType = contentType.type().convertToASCIILowercase();
-    m_contentTypeCodecs = contentType.parameter(codecs());
+    m_contentType = contentType;
     m_url = url;
     m_keySystem = keySystem.convertToASCIILowercase();
     m_contentMIMETypeWasInferredFromExtension = false;
@@ -397,9 +390,9 @@ bool MediaPlayer::load(const URL& url, const ContentType& contentType, const Str
 #endif
 
     // If the MIME type is missing or is not meaningful, try to figure it out from the URL.
-    if (m_contentMIMEType.isEmpty() || m_contentMIMEType == applicationOctetStream() || m_contentMIMEType == textPlain()) {
+    if (m_contentType.type().isEmpty() || m_contentType.type() == applicationOctetStream() || m_contentType.type() == textPlain()) {
         if (m_url.protocolIsData())
-            m_contentMIMEType = mimeTypeFromDataURL(m_url.string());
+            m_contentType = ContentType(mimeTypeFromDataURL(m_url.string()));
         else {
             String lastPathComponent = url.lastPathComponent();
             size_t pos = lastPathComponent.reverseFind('.');
@@ -407,7 +400,7 @@ bool MediaPlayer::load(const URL& url, const ContentType& contentType, const Str
                 String extension = lastPathComponent.substring(pos + 1);
                 String mediaType = MIMETypeRegistry::getMediaMIMETypeForExtension(extension);
                 if (!mediaType.isEmpty()) {
-                    m_contentMIMEType = mediaType;
+                    m_contentType = ContentType(mediaType);
                     m_contentMIMETypeWasInferredFromExtension = true;
                 }
             }
@@ -425,8 +418,7 @@ bool MediaPlayer::load(const URL& url, const ContentType& contentType, MediaSour
     ASSERT(mediaSource);
 
     m_mediaSource = mediaSource;
-    m_contentMIMEType = contentType.type().convertToASCIILowercase();
-    m_contentTypeCodecs = contentType.parameter(codecs());
+    m_contentType = contentType;
     m_url = url;
     m_keySystem = emptyString();
     m_contentMIMETypeWasInferredFromExtension = false;
@@ -442,7 +434,7 @@ bool MediaPlayer::load(MediaStreamPrivate& mediaStream)
 
     m_mediaStream = &mediaStream;
     m_keySystem = emptyString();
-    m_contentMIMEType = emptyString();
+    m_contentType = ContentType(emptyString());
     m_contentMIMETypeWasInferredFromExtension = false;
     loadWithNextMediaEngine(0);
     return m_currentMediaEngine;
@@ -452,8 +444,7 @@ bool MediaPlayer::load(MediaStreamPrivate& mediaStream)
 const MediaPlayerFactory* MediaPlayer::nextBestMediaEngine(const MediaPlayerFactory* current) const
 {
     MediaEngineSupportParameters parameters;
-    parameters.type = m_contentMIMEType;
-    parameters.codecs = m_contentTypeCodecs;
+    parameters.type = m_contentType;
     parameters.url = m_url;
 #if ENABLE(MEDIA_SOURCE)
     parameters.isMediaSource = !!m_mediaSource;
@@ -484,16 +475,16 @@ void MediaPlayer::loadWithNextMediaEngine(const MediaPlayerFactory* current)
 
     const MediaPlayerFactory* engine = nullptr;
 
-    if (!m_contentMIMEType.isEmpty() || MEDIASTREAM || MEDIASOURCE)
+    if (!m_contentType.type().isEmpty() || MEDIASTREAM || MEDIASOURCE)
         engine = nextBestMediaEngine(current);
 
     // If no MIME type is specified or the type was inferred from the file extension, just use the next engine.
-    if (!engine && (m_contentMIMEType.isEmpty() || m_contentMIMETypeWasInferredFromExtension))
+    if (!engine && (m_contentType.type().isEmpty() || m_contentMIMETypeWasInferredFromExtension))
         engine = nextMediaEngine(current);
 
     // Don't delete and recreate the player unless it comes from a different engine.
     if (!engine) {
-        LOG(Media, "MediaPlayer::loadWithNextMediaEngine - no media engine found for type \"%s\"", m_contentMIMEType.utf8().data());
+        LOG(Media, "MediaPlayer::loadWithNextMediaEngine - no media engine found for type \"%s\"", m_contentType.raw().utf8().data());
         m_currentMediaEngine = engine;
         m_private = nullptr;
     } else if (m_currentMediaEngine != engine) {
@@ -907,7 +898,7 @@ MediaPlayer::SupportsType MediaPlayer::supportsType(const MediaEngineSupportPara
 {
     // 4.8.10.3 MIME types - The canPlayType(type) method must return the empty string if type is a type that the 
     // user agent knows it cannot render or is the type "application/octet-stream"
-    if (parameters.type == applicationOctetStream())
+    if (parameters.type.type() == applicationOctetStream())
         return IsNotSupported;
 
     const MediaPlayerFactory* engine = bestMediaEngineForSupportParameters(parameters);
@@ -1153,7 +1144,7 @@ void MediaPlayer::networkStateChanged()
     // let the next engine try.
     if (m_private->networkState() >= FormatError && m_private->readyState() < HaveMetadata) {
         client().mediaPlayerEngineFailedToLoad();
-        if (installedMediaEngines().size() > 1 && (m_contentMIMEType.isEmpty() || nextBestMediaEngine(m_currentMediaEngine))) {
+        if (installedMediaEngines().size() > 1 && (m_contentType.type().isEmpty() || nextBestMediaEngine(m_currentMediaEngine))) {
             m_reloadTimer.startOneShot(0_s);
             return;
         }

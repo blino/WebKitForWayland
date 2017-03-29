@@ -798,12 +798,9 @@ void MediaPlayerPrivateGStreamerMSE::trackDetected(RefPtr<AppendPipeline> append
         m_playbackPipeline->reattachTrack(appendPipeline->sourceBufferPrivate(), newTrack);
 }
 
-bool MediaPlayerPrivateGStreamerMSE::supportsCodecs(const String& codecs)
+bool MediaPlayerPrivateGStreamerMSE::supportsCodecs(Vector<String> codecs)
 {
-    Vector<String> codecEntries;
-    codecs.split(',', false, codecEntries);
-
-    for (String codec : codecEntries) {
+    for (String codec : codecs) {
         bool isCodecSupported = false;
 
         // If the codec is named like a mimetype (eg: video/avc) remove the "video/" part.
@@ -831,17 +828,17 @@ MediaPlayer::SupportsType MediaPlayerPrivateGStreamerMSE::supportsType(const Med
         return result;
 
     // YouTube TV provides empty types for some videos and we want to be selected as best media engine for them.
-    if (parameters.type.isEmpty()) {
+    if (parameters.type.type().isEmpty()) {
         result = MediaPlayer::MayBeSupported;
         return result;
     }
 
     // Spec says we should not return "probably" if the codecs string is empty.
-    if (mimeTypeCache().contains(parameters.type)) {
-        if (parameters.codecs.isEmpty())
+    if (mimeTypeCache().contains(parameters.type.type())) {
+        if (parameters.type.codecs().isEmpty())
             result = MediaPlayer::MayBeSupported;
         else
-            result = supportsCodecs(parameters.codecs) ? MediaPlayer::IsSupported : MediaPlayer::IsNotSupported;
+            result = supportsCodecs(parameters.type.codecs()) ? MediaPlayer::IsSupported : MediaPlayer::IsNotSupported;
     }
 
     return extendedSupportsType(parameters, result);

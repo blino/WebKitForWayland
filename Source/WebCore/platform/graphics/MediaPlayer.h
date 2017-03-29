@@ -30,6 +30,7 @@
 #include "GraphicsTypes3D.h"
 
 #include "AudioTrackPrivate.h"
+#include "ContentType.h"
 #include "LegacyCDMSession.h"
 #include "InbandTextTrackPrivate.h"
 #include "IntRect.h"
@@ -115,8 +116,7 @@ struct MediaEngineSupportParameters {
 
     MediaEngineSupportParameters() { }
 
-    String type;
-    String codecs;
+    ContentType type;
     URL url;
     String keySystem;
     bool isMediaSource { false };
@@ -127,7 +127,6 @@ extern const PlatformMedia NoPlatformMedia;
 
 class CDMSessionClient;
 class CachedResourceLoader;
-class ContentType;
 class GraphicsContext;
 class GraphicsContext3D;
 class IntRect;
@@ -624,7 +623,7 @@ private:
     std::unique_ptr<MediaPlayerPrivateInterface> m_private;
     const MediaPlayerFactory* m_currentMediaEngine;
     URL m_url;
-    String m_contentMIMEType;
+    ContentType m_contentType;
     String m_contentTypeCodecs;
     String m_keySystem;
     IntSize m_size;
