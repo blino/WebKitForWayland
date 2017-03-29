@@ -1500,6 +1500,36 @@ bool MediaPlayerPrivateGStreamerBase::supportsKeySystem(const String& keySystem,
 
 MediaPlayer::SupportsType MediaPlayerPrivateGStreamerBase::extendedSupportsType(const MediaEngineSupportParameters&, MediaPlayer::SupportsType result)
 {
+    int width = parameters.type.parameter(ASCIILiteral("width")).toInt();
+    int height = parameters.type.parameter(ASCIILiteral("height")).toInt();
+    int framerate = parameters.type.parameter(ASCIILiteral("framerate")).toInt();
+    int bitrate = parameters.type.parameter(ASCIILiteral("bitrate")).toInt();
+    int channels = parameters.type.parameter(ASCIILiteral("channels")).toInt();
+    String cryptoblockformat = parameters.type.parameter(ASCIILiteral("cryptoblockformat"));
+
+    bool hasVP9 = parameters.type.codecs().contains("vp9");
+    int maxWidth = hasVP9 ? 3840 : 1920;
+    int maxHeight = hasVP9 ? 2160 : 1080;
+
+    if (width < 0 || width > maxWidth)
+        return MediaPlayer::IsNotSupported;
+
+    if (height < 0 || height > maxHeight)
+        return MediaPlayer::IsNotSupported;
+
+    if (framerate < 0 || framerate > 60)
+        return MediaPlayer::IsNotSupported;
+
+    if (bitrate < 0 || bitrate > 50'000'000)
+        return MediaPlayer::IsNotSupported;
+
+    if (channels < 0 || channels > 2)
+        return MediaPlayer::IsNotSupported;
+
+    // Add this extra test when WebM/VP9/Widevine is ready: && cryptoblockformat != "subsample"
+    if (!cryptoblockformat.isEmpty())
+        return MediaPlayer::IsNotSupported;
+
     return result;
 }
 
