@@ -68,13 +68,13 @@ MediaPlayer::SupportsType MockMediaPlayerMediaSource::supportsType(const MediaEn
     if (!parameters.isMediaSource)
         return MediaPlayer::IsNotSupported;
 
-    if (parameters.type.isEmpty() || !mimeTypeCache().contains(parameters.type))
+    if (parameters.type.type().isEmpty() || !mimeTypeCache().contains(parameters.type.type()))
         return MediaPlayer::IsNotSupported;
 
-    if (parameters.codecs.isEmpty())
+    if (parameters.type.codecs().isEmpty())
         return MediaPlayer::MayBeSupported;
 
-    return parameters.codecs == "mock" ? MediaPlayer::IsSupported : MediaPlayer::MayBeSupported;
+    return parameters.type.codecs().contains("mock") ? MediaPlayer::IsSupported : MediaPlayer::MayBeSupported;
 }
 
 MockMediaPlayerMediaSource::MockMediaPlayerMediaSource(MediaPlayer* player)
