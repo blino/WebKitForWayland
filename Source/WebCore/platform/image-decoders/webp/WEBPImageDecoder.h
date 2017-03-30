@@ -33,6 +33,7 @@
 #if USE(WEBP)
 
 #include "webp/decode.h"
+#include "webp/demux.h"
 
 namespace WebCore {
 
@@ -43,15 +44,29 @@ public:
 
     String filenameExtension() const override { return "webp"; }
     bool isSizeAvailable() override;
+    size_t frameCount() const override;
+    void setData(SharedBuffer& data, bool allDataReceived) override;
+    int repetitionCount() const override;
     ImageFrame* frameBufferAtIndex(size_t index) override;
 
 private:
-    bool decode(bool onlySize);
+    bool decode(size_t frameIndex, const WebPIterator* webpFrame, bool onlySize);
 
     WebPIDecoder* m_decoder;
     WebPDecBuffer m_decoderBuffer;
-    bool m_hasAlpha;
+    int m_formatFlags;
+    bool m_frameBackgroundHasAlpha;
 
+    WebPDemuxer* m_demux;
+    WebPDemuxState m_demuxState;
+    bool m_haveAlreadyParsedThisData;
+    bool m_haveReadAnimationParameters;
+    int m_repetitionCount;
+    int m_decodedHeight;
+
+    bool updateDemuxer();
+    bool initFrameBuffer(size_t frameIndex, const WebPIterator* webpFrame);
+    void applyPostProcessing(size_t frameIndex);
     void clear();
 };
 
