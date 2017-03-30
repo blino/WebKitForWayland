@@ -51,7 +51,6 @@ private:
     WebPIDecoder* m_decoder;
     bool m_hasAlpha;
 
-    void applyColorProfile(const uint8_t*, size_t, ImageFrame&) { };
     void clear();
 };
 
