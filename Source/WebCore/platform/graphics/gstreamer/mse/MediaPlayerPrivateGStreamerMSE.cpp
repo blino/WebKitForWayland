@@ -874,6 +874,13 @@ MediaTime MediaPlayerPrivateGStreamerMSE::currentMediaTime() const
 {
     MediaTime position = MediaPlayerPrivateGStreamer::currentMediaTime();
 
+    MediaTime maxBufferedTime = buffered()->maximumBufferedTime();
+    if(position > maxBufferedTime) {
+        GST_DEBUG("position=%f maxBufferedTime=%f durationMediaTime=%f\n",
+               position.toFloat(), maxBufferedTime.toFloat(), durationMediaTime().toFloat());
+        position = maxBufferedTime;
+    }
+
     if (m_eosPending && (paused() || (position >= durationMediaTime()))) {
         if (m_networkState != MediaPlayer::Loaded) {
             m_networkState = MediaPlayer::Loaded;
