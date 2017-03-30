@@ -53,7 +53,6 @@ WEBPImageDecoder::WEBPImageDecoder(AlphaOption alphaOption, GammaAndColorProfile
     , m_demux(0)
     , m_demuxState(WEBP_DEMUX_PARSING_HEADER)
     , m_haveAlreadyParsedThisData(false)
-    , m_haveReadAnimationParameters(false)
     , m_repetitionCount(WebCore::RepetitionCountOnce)
     , m_decodedHeight(0)
 {
@@ -171,9 +170,9 @@ bool WEBPImageDecoder::updateDemuxer()
 
     m_haveAlreadyParsedThisData = true;
 
-    const unsigned webpHeaderSize = 20; // RIFF_HEADER_SIZE + CHUNK_HEADER_SIZE)
+    const unsigned webpHeaderSize = 30; // RIFF_HEADER_SIZE + CHUNK_HEADER_SIZE + VP8_FRAME_HEADER_SIZE
     if (m_data->size() < webpHeaderSize)
-        return false; // Wait for headers so that WebPDemuxPartial doesn't return null.
+        return false; // Await VP8X header so WebPDemuxPartial succeeds.
 
     WebPDemuxDelete(m_demux);
     WebPData inputData = { reinterpret_cast<const uint8_t*>(m_data->data()), m_data->size() };
@@ -181,30 +180,33 @@ bool WEBPImageDecoder::updateDemuxer()
     if (!m_demux)
         return setFailed();
 
-    if (m_demuxState <= WEBP_DEMUX_PARSING_HEADER)
-        return false; // Not enough data for parsing canvas width/height yet.
+    ASSERT(m_demuxState > WEBP_DEMUX_PARSING_HEADER);
+    size_t newFrameCount = WebPDemuxGetI(m_demux, WEBP_FF_FRAME_COUNT);
+    if (!newFrameCount)
+        return false; // Wait until the encoded image frame data arrives.
 
-    bool hasAnimation = (m_formatFlags & ANIMATION_FLAG);
     if (!ImageDecoder::isSizeAvailable()) {
-        m_formatFlags = WebPDemuxGetI(m_demux, WEBP_FF_FORMAT_FLAGS);
-        hasAnimation = (m_formatFlags & ANIMATION_FLAG);
-        if (!hasAnimation)
-            m_repetitionCount = WebCore::RepetitionCountNone;
-        if (!setSize(IntSize(WebPDemuxGetI(m_demux, WEBP_FF_CANVAS_WIDTH), WebPDemuxGetI(m_demux, WEBP_FF_CANVAS_HEIGHT))))
+        int width = WebPDemuxGetI(m_demux, WEBP_FF_CANVAS_WIDTH);
+        int height = WebPDemuxGetI(m_demux, WEBP_FF_CANVAS_HEIGHT);
+        if (!setSize(IntSize(width, height)))
             return setFailed();
+
+        m_formatFlags = WebPDemuxGetI(m_demux, WEBP_FF_FORMAT_FLAGS);
+        if (!(m_formatFlags & ANIMATION_FLAG)) {
+            m_repetitionCount = WebCore::RepetitionCountNone;
+        } else {
+            // Since we have parsed at least one frame, even if partially,
+            // the global animation (ANIM) properties have been read since
+            // an ANIM chunk must precede the ANMF frame chunks.
+            m_repetitionCount = WebPDemuxGetI(m_demux, WEBP_FF_LOOP_COUNT);
+            ASSERT(m_repetitionCount == (m_repetitionCount & 0xffff)); // Loop count is always <= 16 bits.
+            if (!m_repetitionCount)
+                m_repetitionCount = WebCore::RepetitionCountInfinite;
+        }
     }
+
     ASSERT(ImageDecoder::isSizeAvailable());
-    const size_t newFrameCount = WebPDemuxGetI(m_demux, WEBP_FF_FRAME_COUNT);
-    if (hasAnimation && !m_haveReadAnimationParameters && newFrameCount) {
-        // As we have parsed at least one frame (even if partially),
-        // we must already have parsed the animation properties.
-        // This is because ANIM chunk always precedes ANMF chunks.
-        m_repetitionCount = WebPDemuxGetI(m_demux, WEBP_FF_LOOP_COUNT);
-        ASSERT(m_repetitionCount == (m_repetitionCount & 0xffff)); // Loop count is always <= 16 bits.
-        if (!m_repetitionCount)
-            m_repetitionCount = WebCore::RepetitionCountInfinite;
-        m_haveReadAnimationParameters = true;
-    }
+
     const size_t oldFrameCount = m_frameBufferCache.size();
     if (newFrameCount > oldFrameCount) {
         m_frameBufferCache.resize(newFrameCount);
@@ -212,7 +214,7 @@ bool WEBPImageDecoder::updateDemuxer()
             // FIXME
             /*
             m_frameBufferCache[i].setPremultiplyAlpha(m_premultiplyAlpha);
-            if (!hasAnimation) {
+            if (!m_formatFlags & ANIMATION_FLAG) {
                 ASSERT(!i);
                 m_frameBufferCache[i].setRequiredPreviousFrameIndex(notFound);
                 continue;

@@ -60,7 +60,6 @@ private:
     WebPDemuxer* m_demux;
     WebPDemuxState m_demuxState;
     bool m_haveAlreadyParsedThisData;
-    bool m_haveReadAnimationParameters;
     int m_repetitionCount;
     int m_decodedHeight;
 
