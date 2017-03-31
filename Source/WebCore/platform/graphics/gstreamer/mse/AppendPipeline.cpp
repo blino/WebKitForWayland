@@ -743,7 +743,7 @@ void AppendPipeline::appsinkNewSample(GstSample* sample)
                     } else if (GST_BUFFER_PTS_IS_VALID(buffer)) {
                         // Some containers like webm don't supply a duration. Let's assume 60fps and let the gap sample hack fill the gaps if the duration was actually longer.
                         // The duration for the next samples will be computed using PTS differences.
-                        GST_BUFFER_DURATION(buffer) = toGstClockTime(GST_SECOND/60.0);
+                        GST_BUFFER_DURATION(buffer) = (GstClockTime) (GST_SECOND/60.0);
                     }
                 }
 
