@@ -874,6 +874,7 @@ void MediaPlayerPrivateGStreamerMSE::markEndOfStream(MediaSourcePrivate::EndOfSt
 MediaTime MediaPlayerPrivateGStreamerMSE::currentMediaTime() const
 {
     MediaTime position = MediaPlayerPrivateGStreamer::currentMediaTime();
+    MediaTime position_margin(100, 1000);
 
     MediaTime maxBufferedTime = buffered()->maximumBufferedTime();
     if(position > maxBufferedTime) {
@@ -882,7 +883,7 @@ MediaTime MediaPlayerPrivateGStreamerMSE::currentMediaTime() const
         position = maxBufferedTime;
     }
 
-    if (m_eosPending && (paused() || (position >= durationMediaTime()))) {
+    if (m_eosPending && (paused() || ((position + position_margin) >= durationMediaTime()))) {
         if (m_networkState != MediaPlayer::Loaded) {
             m_networkState = MediaPlayer::Loaded;
             m_player->networkStateChanged();
