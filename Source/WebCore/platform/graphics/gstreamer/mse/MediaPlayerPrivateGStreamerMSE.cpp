@@ -703,7 +703,15 @@ void MediaPlayerPrivateGStreamerMSE::durationChanged()
     // Avoid emiting durationchanged in the case where the previous duration was 0 because that case is already handled
     // by the HTMLMediaElement.
     if (m_mediaTimeDuration != previousDuration && m_mediaTimeDuration.isValid() && previousDuration.isValid()) {
-        m_player->durationChanged();
+        AppendPipeline::AppendState state;
+
+        for (auto it : m_appendPipelinesMap) {
+             state = it.value->appendState();
+        }
+
+        if(state != AppendPipeline::AppendState::Sampling)
+            m_player->durationChanged();
+
         m_playbackPipeline->notifyDurationChanged();
         m_mediaSource->durationChanged(m_mediaTimeDuration);
     }
