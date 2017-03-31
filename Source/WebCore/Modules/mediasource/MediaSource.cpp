@@ -524,8 +524,17 @@ ExceptionOr<void> MediaSource::setDurationInternal(const MediaTime& duration)
         highestPresentationTimestamp = std::max(highestPresentationTimestamp, sourceBuffer->highestPresentationTimestamp());
         highestEndTime = std::max(highestEndTime, sourceBuffer->bufferedInternal().ranges().maximumBufferedTime());
     }
-    if (highestPresentationTimestamp.isValid() && newDuration < highestPresentationTimestamp)
-        return Exception { INVALID_STATE_ERR };
+    if (highestPresentationTimestamp.isValid() && newDuration < highestPresentationTimestamp) {
+        //return Exception { INVALID_STATE_ERR };
+        //To fix MSE tests 18-MediaElementEvents, 31,46,66-DurationAfterAppend
+        for (auto& sourceBuffer : *m_sourceBuffers) {
+            LOG(MediaSource, "MediaSource::setDurationInternal - Removing from %g to %g\n", newDuration.toDouble(), highestEndTime.toDouble());
+            sourceBuffer->remove(newDuration.toDouble(), highestEndTime.toDouble());
+        }
+        m_duration = newDuration;
+        m_private->durationChanged();
+        return { };
+    }
 
     // 4. If new duration is less than highest end time, then
     // 4.1. Update new duration to equal highest end time.
