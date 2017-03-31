@@ -1089,6 +1089,10 @@ void AppendPipeline::connectDemuxerSrcPadToAppsink(GstPad* demuxerSrcPad)
 
     m_oldTrack = m_track;
 
+    m_sampleDuration = MediaTime::invalidTime();
+    m_lastPts = MediaTime::invalidTime();
+    m_lastDts = MediaTime::invalidTime();
+
     parseDemuxerSrcPadCaps(gst_caps_ref(caps.get()));
 
     switch (m_streamType) {
