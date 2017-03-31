@@ -497,8 +497,10 @@ ExceptionOr<void> MediaSource::setDurationInternal(const MediaTime& duration)
     MediaTime newDuration = duration;
 
     // 1. If the current value of duration is equal to new duration, then return.
-    if (newDuration == m_duration)
-        return { };
+    if (newDuration == m_duration) {
+        //To fix MSE test 18-MediaElementEvents: do not return here
+        //return { };
+    }
 
 #if 1
     // Implementation to pass the YouTube MSE Conformance Tests 2016, conforming to the old MSE spec:
