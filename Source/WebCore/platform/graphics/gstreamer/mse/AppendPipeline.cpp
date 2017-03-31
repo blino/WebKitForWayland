@@ -1122,6 +1122,18 @@ void AppendPipeline::connectDemuxerSrcPadToAppsink(GstPad* demuxerSrcPad)
         break;
     }
 
+    if(m_streamType == WebCore::MediaSourceStreamTypeGStreamer::Video) {
+        GUniquePtr<gchar> strcaps(gst_caps_to_string(caps.get()));
+        if(strstr((char*)strcaps.get(), "video/x-vp9") != NULL) {
+            if (m_appsinkCaps != caps) {
+                m_appsinkCaps = WTFMove(caps);
+                if (m_playerPrivate)
+                    m_playerPrivate->trackDetected(this, m_oldTrack, m_track);
+                didReceiveInitializationSegment();
+            }
+        }
+    }
+
     m_padAddRemoveCondition.notifyOne();
 }
 
