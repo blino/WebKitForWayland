@@ -338,6 +338,7 @@ bool MediaPlayerPrivateGStreamerMSE::doSeek()
     }
 
     GST_DEBUG("We can seek now");
+    gst_element_set_state(m_pipeline.get(), GST_STATE_PAUSED);
 
     gint64 startTime = position, endTime = GST_CLOCK_TIME_NONE;
     if (rate < 0) {
