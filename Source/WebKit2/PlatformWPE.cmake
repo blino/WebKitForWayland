@@ -188,6 +188,8 @@ list(APPEND WebKit2_SOURCES
     DatabaseProcess/gtk/DatabaseProcessMainGtk.cpp
 )
 
+set_source_files_properties(UIProcess/wpe/WebPageProxyWPE.cpp PROPERTIES COMPILE_DEFINITIONS WPE_PROJECT_VERSION_STRING="${PROJECT_VERSION}")
+
 list(APPEND WebKit2_MESSAGES_IN_FILES
     UIProcess/API/wpe/CompositingManagerProxy.messages.in
 )
