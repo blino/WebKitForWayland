@@ -355,7 +355,19 @@ bool MediaPlayerPrivateGStreamerMSE::doSeek()
     webKitMediaSrcPrepareSeek(WEBKIT_MEDIA_SRC(m_source.get()), seekTime);
 
     m_gstSeekCompleted = false;
-    if (!gst_element_seek(m_pipeline.get(), rate, GST_FORMAT_TIME, seekType, GST_SEEK_TYPE_SET, startTime, GST_SEEK_TYPE_SET, endTime)) {
+    int retry = 5;
+    while (retry-- > 0) {
+        gboolean ret = gst_element_seek(m_pipeline.get(), rate, GST_FORMAT_TIME, seekType, GST_SEEK_TYPE_SET, startTime, GST_SEEK_TYPE_SET, endTime);
+        if (ret) {
+            break;
+        }
+        else {
+            // Fix random failure on MSE tests 60 and 80 (BufUnbufSeek)
+            GST_WARNING("doSeek(): gst_element_seek() failed, retrying %d\n", retry);
+            usleep(50000);
+        }
+    }
+    if(retry == 0) {
         webKitMediaSrcSetReadyForSamples(WEBKIT_MEDIA_SRC(m_source.get()), true);
         m_seeking = false;
         m_gstSeekCompleted = true;
