@@ -884,11 +884,11 @@ void SourceBuffer::evictCodedFrames(size_t newDataSize)
     // 3. Let removal ranges equal a list of presentation time ranges that can be evicted from
     // the presentation to make room for the new data.
 
-    // NOTE: begin by removing data from the beginning of the buffered ranges, 30 seconds at
-    // a time, up to 30 seconds before currentTime.
-    MediaTime thirtySeconds = MediaTime(30, 1);
+    // NOTE: begin by removing data from the beginning of the buffered ranges, 10 seconds at
+    // a time, up to 10 seconds before currentTime.
+    MediaTime tenSeconds = MediaTime(10, 1);
     MediaTime currentTime = m_source->currentTime();
-    MediaTime maximumRangeEnd = currentTime - thirtySeconds;
+    MediaTime maximumRangeEnd = currentTime - tenSeconds;
 
 #if !LOG_DISABLED
     LOG(MediaSource, "SourceBuffer::evictCodedFrames(%p) - currentTime = %lf, require %zu bytes, maximum buffer size is %zu", this, m_source->currentTime().toDouble(), extraMemoryCost() + newDataSize, maximumBufferSize);
@@ -896,7 +896,7 @@ void SourceBuffer::evictCodedFrames(size_t newDataSize)
 #endif
 
     MediaTime rangeStart = MediaTime::zeroTime();
-    MediaTime rangeEnd = rangeStart + thirtySeconds;
+    MediaTime rangeEnd = rangeStart + tenSeconds;
     while (rangeStart < maximumRangeEnd) {
         // 4. For each range in removal ranges, run the coded frame removal algorithm with start and
         // end equal to the removal range start and end timestamp respectively.
@@ -907,8 +907,8 @@ void SourceBuffer::evictCodedFrames(size_t newDataSize)
             break;
         }
 
-        rangeStart += thirtySeconds;
-        rangeEnd += thirtySeconds;
+        rangeStart += tenSeconds;
+        rangeEnd += tenSeconds;
     }
 
     if (!m_bufferFull) {
@@ -917,7 +917,7 @@ void SourceBuffer::evictCodedFrames(size_t newDataSize)
     }
 
     // If there still isn't enough free space and there buffers in time ranges after the current range (ie. there is a gap after
-    // the current buffered range), delete 30 seconds at a time from duration back to the current time range or 30 seconds after
+    // the current buffered range), delete 10 seconds at a time from duration back to the current time range or 10 seconds after
     // currenTime whichever we hit first.
     auto buffered = m_buffered->ranges();
     size_t currentTimeRange = buffered.find(currentTime);
@@ -926,11 +926,11 @@ void SourceBuffer::evictCodedFrames(size_t newDataSize)
         return;
     }
 
-    MediaTime minimumRangeStart = currentTime + thirtySeconds;
+    MediaTime minimumRangeStart = currentTime + tenSeconds;
     LOG(MediaSource, "SourceBuffer::evictCodedFrames(%p) - minimumRangeStart: %f, duration: %f", this, minimumRangeStart.toDouble(), m_source->duration().toDouble());
 
     rangeEnd = m_source->duration();
-    rangeStart = rangeEnd - thirtySeconds;
+    rangeStart = rangeEnd - tenSeconds;
 
     auto removeFramesWhileFull = [&] (PlatformTimeRanges& ranges) {
         for (int i = ranges.length()-1; i >= 0; --i)
@@ -960,8 +960,8 @@ void SourceBuffer::evictCodedFrames(size_t newDataSize)
         if (m_bufferFull == false)
             break;
 
-        rangeStart -= thirtySeconds;
-        rangeEnd -= thirtySeconds;
+        rangeStart -= tenSeconds;
+        rangeEnd -= tenSeconds;
     }
 
     if (m_bufferFull && currentTimeRange == notFound)
