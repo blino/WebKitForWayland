@@ -1967,7 +1967,9 @@ void SourceBuffer::reenqueueMediaForTime(TrackBuffer& trackBuffer, const AtomicS
     }
 
     // Fill the decode queue with the remaining samples.
-    for (auto iter = currentSampleDTSIterator; iter != trackBuffer.samples.decodeOrder().end(); ++iter)
+    /*insert only the new buffered samples, don't insert the samples of the last buffered range
+     use case: backward seek to unbuffered range before a buffered one.*/
+    for (auto iter = currentSampleDTSIterator; iter->first.first <= trackBuffer.lastDecodeTimestamp; ++iter)
         trackBuffer.decodeQueue.insert(*iter);
     provideMediaData(trackBuffer, trackID);
 
