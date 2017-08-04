@@ -1686,7 +1686,11 @@ void SourceBuffer::sourceBufferPrivateDidReceiveSample(MediaSample& sample)
         // Add the coded frame with the presentation timestamp, decode timestamp, and frame duration to the track buffer.
         trackBuffer.samples.addSample(sample);
 
+#if USE_GSTREAMER
+        if (trackBuffer.lastEnqueuedDecodeEndTime.isInvalid() || (decodeTimestamp >= trackBuffer.lastEnqueuedDecodeEndTime || presentationTimestamp >= trackBuffer.lastEnqueuedPresentationTime)) {
+#else
         if (trackBuffer.lastEnqueuedDecodeEndTime.isInvalid() || decodeTimestamp >= trackBuffer.lastEnqueuedDecodeEndTime) {
+#endif
             DecodeOrderSampleMap::KeyType decodeKey(decodeTimestamp, presentationTimestamp);
             trackBuffer.decodeQueue.insert(DecodeOrderSampleMap::MapType::value_type(decodeKey, &sample));
         }
