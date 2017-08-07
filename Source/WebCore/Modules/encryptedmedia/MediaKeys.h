@@ -69,6 +69,8 @@ public:
     void decryptWithSession(const String&);
 #endif
 
+    void attachInstanceToCDMClients();
+
 protected:
     MediaKeys(bool useDistinctiveIdentifier, bool persistentStateAllowed, const Vector<MediaKeySessionType>&, Ref<CDM>&&, Ref<CDMInstance>&&);
 
