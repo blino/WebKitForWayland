@@ -119,7 +119,8 @@ void MediaSource::setPrivateAndOpen(Ref<MediaSourcePrivate>&& mediaSourcePrivate
 
     // ↳ Otherwise
     // 1. Set the media element's delaying-the-load-event-flag to false.
-    m_mediaElement->setShouldDelayLoadEvent(false);
+    if(m_mediaElement)
+        m_mediaElement->setShouldDelayLoadEvent(false);
 
     // 2. Set the readyState attribute to "open".
     // 3. Queue a task to fire a simple event named sourceopen at the MediaSource.
