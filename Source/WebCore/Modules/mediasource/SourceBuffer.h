@@ -108,8 +108,6 @@ public:
 
     void setShouldGenerateTimestamps(bool flag) { m_shouldGenerateTimestamps = flag; }
 
-    void rangeRemoval(const MediaTime&, const MediaTime&);
-
     bool isBufferedDirty() const { return m_bufferedDirty; }
     void setBufferedDirty(bool flag) { m_bufferedDirty = flag; }
 
@@ -179,6 +177,8 @@ private:
     void appendError(bool);
 
     bool hasAudio() const;
+
+    void rangeRemoval(const MediaTime&, const MediaTime&);
 
     friend class Internals;
     WEBCORE_EXPORT Vector<String> bufferedSamplesForTrackID(const AtomicString&);
