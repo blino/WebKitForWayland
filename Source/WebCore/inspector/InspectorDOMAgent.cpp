@@ -42,7 +42,6 @@
 #include "CSSStyleRule.h"
 #include "CSSStyleSheet.h"
 #include "CharacterData.h"
-#include "CommandLineAPIHost.h"
 #include "ContainerNode.h"
 #include "Cookie.h"
 #include "CookieJar.h"
@@ -93,7 +92,6 @@
 #include "Text.h"
 #include "TextNodeTraversal.h"
 #include "Timer.h"
-#include "WebInjectedScriptManager.h"
 #include "XPathResult.h"
 #include "markup.h"
 #include <inspector/IdentifiersFactory.h>
@@ -201,21 +199,6 @@ void RevalidateStyleAttributeTask::timerFired()
 
     m_elements.clear();
 }
-
-class InspectableNode final : public CommandLineAPIHost::InspectableObject {
-public:
-    explicit InspectableNode(Node* node)
-        : m_node(node)
-    {
-    }
-
-    JSC::JSValue get(JSC::ExecState& state) final
-    {
-        return InspectorDOMAgent::nodeAsScriptValue(state, m_node.get());
-    }
-private:
-    RefPtr<Node> m_node;
-};
 
 String InspectorDOMAgent::toErrorString(ExceptionCode ec)
 {
@@ -1270,18 +1253,6 @@ void InspectorDOMAgent::focus(ErrorString& errorString, int nodeId)
         return;
     }
     element->focus();
-}
-
-void InspectorDOMAgent::setInspectedNode(ErrorString& errorString, int nodeId)
-{
-    Node* node = nodeForId(nodeId);
-    if (!node || node->isInUserAgentShadowTree()) {
-        errorString = ASCIILiteral("No node with given id found");
-        return;
-    }
-
-    if (CommandLineAPIHost* commandLineAPIHost = static_cast<WebInjectedScriptManager&>(m_injectedScriptManager).commandLineAPIHost())
-        commandLineAPIHost->addInspectedObject(std::make_unique<InspectableNode>(node));
 }
 
 void InspectorDOMAgent::resolveNode(ErrorString& errorString, int nodeId, const String* const objectGroup, RefPtr<Inspector::Protocol::Runtime::RemoteObject>& result)

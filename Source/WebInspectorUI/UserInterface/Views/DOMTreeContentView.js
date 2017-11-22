@@ -435,7 +435,7 @@ WI.DOMTreeContentView = class DOMTreeContentView extends WI.ContentView
             this._lastSelectedNodePathSetting.value = {url: WI.frameResourceManager.mainFrame.url.hash, path: selectedDOMNode.path()};
 
         if (selectedDOMNode)
-            WI.domTreeManager.setInspectedNode(selectedDOMNode);
+            ConsoleAgent.addInspectedNode(selectedDOMNode.id);
 
         this.dispatchEventToListeners(WI.ContentView.Event.SelectionPathComponentsDidChange);
     }

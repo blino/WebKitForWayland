@@ -103,7 +103,7 @@ function test()
                     return reject();
                 }
 
-                DOMAgent.setInspectedNode(contentNodeId);
+                ConsoleAgent.addInspectedNode(contentNodeId);
                 resolve();
             });
         });

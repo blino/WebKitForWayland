@@ -47,6 +47,7 @@ public:
 
 private:
     void clearMessages(ErrorString&) override;
+    void addInspectedNode(ErrorString&, int nodeId) override;
 
     InspectorDOMAgent* m_inspectorDOMAgent;
 };
