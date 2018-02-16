@@ -3,7 +3,10 @@ include(platform/FreeType.cmake)
 include(platform/GCrypt.cmake)
 include(platform/GStreamer.cmake)
 include(platform/ImageDecoders.cmake)
-include(platform/TextureMapper.cmake)
+
+if (USE_TEXTURE_MAPPER)
+    include(platform/TextureMapper.cmake)
+endif ()
 
 # Allow building ANGLE on platforms that don't provide X11 headers.
 list(APPEND ANGLE_PLATFORM_DEFINITIONS "USE_WPE")
