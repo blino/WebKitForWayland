@@ -34,7 +34,6 @@
 #include "BitmapImage.h"
 #include "CairoUtilities.h"
 #include "Color.h"
-#include "Extensions3DCache.h"
 #include "GraphicsContext.h"
 #include "MIMETypeRegistry.h"
 #include "NotImplemented.h"
