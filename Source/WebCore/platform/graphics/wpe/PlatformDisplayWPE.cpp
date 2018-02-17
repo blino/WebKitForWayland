@@ -28,7 +28,6 @@
 
 #if PLATFORM(WPE)
 
-#include "GLContextEGL.h"
 // FIXME: For now default to the GBM EGL platform, but this should really be
 // somehow deducible from the build configuration.
 #define __GBM__ 1
