@@ -28,6 +28,7 @@
 
 #if PLATFORM(WPE)
 
+#if USE(EGL)
 // FIXME: For now default to the GBM EGL platform, but this should really be
 // somehow deducible from the build configuration.
 #define __GBM__ 1
@@ -37,6 +38,7 @@
 #include <EGL/egl.h>
 #endif
 #include <wpe/renderer-backend-egl.h>
+#endif
 
 namespace WebCore {
 
@@ -44,11 +46,14 @@ PlatformDisplayWPE::PlatformDisplayWPE() = default;
 
 PlatformDisplayWPE::~PlatformDisplayWPE()
 {
+#if USE(EGL)
     wpe_renderer_backend_egl_destroy(m_backend);
+#endif
 }
 
 void PlatformDisplayWPE::initialize(int hostFd)
 {
+#if USE(EGL)
     m_backend = wpe_renderer_backend_egl_create(hostFd);
 
     m_eglDisplay = eglGetDisplay(wpe_renderer_backend_egl_get_native_display(m_backend));
@@ -58,6 +63,9 @@ void PlatformDisplayWPE::initialize(int hostFd)
     }
 
     PlatformDisplay::initializeEGLDisplay();
+#else
+    UNUSED_PARAM(hostFd);
+#endif
 }
 
 } // namespace WebCore

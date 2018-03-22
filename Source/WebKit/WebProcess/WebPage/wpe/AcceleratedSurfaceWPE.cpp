@@ -26,6 +26,8 @@
 #include "config.h"
 #include "AcceleratedSurfaceWPE.h"
 
+#if USE(EGL)
+
 #include "WebPage.h"
 #include <WebCore/PlatformDisplayWPE.h>
 #include <wpe/renderer-backend-egl.h>
@@ -108,3 +110,4 @@ void AcceleratedSurfaceWPE::didRenderFrame()
 
 } // namespace WebKit
 
+#endif // USE(EGL)
