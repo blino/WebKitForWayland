@@ -133,7 +133,6 @@ list(APPEND WebKit_SOURCES
 
     StorageProcess/glib/StorageProcessMainGLib.cpp
 
-    UIProcess/AcceleratedDrawingAreaProxy.cpp
     UIProcess/BackingStore.cpp
     UIProcess/DefaultUndoController.cpp
     UIProcess/LegacySessionStateCodingNone.cpp
@@ -271,9 +270,6 @@ list(APPEND WebKit_SOURCES
     WebProcess/WebCoreSupport/wpe/WebEditorClientWPE.cpp
     WebProcess/WebCoreSupport/wpe/WebPopupMenuWPE.cpp
 
-    WebProcess/WebPage/AcceleratedDrawingArea.cpp
-    WebProcess/WebPage/AcceleratedSurface.cpp
-
     WebProcess/WebPage/CoordinatedGraphics/AreaAllocator.cpp
     WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp
     WebProcess/WebPage/CoordinatedGraphics/CoordinatedLayerTreeHost.cpp
@@ -292,6 +288,19 @@ list(APPEND WebKit_SOURCES
 
     WebProcess/wpe/WebProcessMainWPE.cpp
 )
+
+if (USE_TEXTURE_MAPPER)
+    list(APPEND WebKit_SOURCES
+        UIProcess/AcceleratedDrawingAreaProxy.cpp
+        WebProcess/WebPage/AcceleratedDrawingArea.cpp
+        WebProcess/WebPage/AcceleratedSurface.cpp
+    )
+else ()
+    list(APPEND WebKit_SOURCES
+        UIProcess/DrawingAreaProxyImpl.cpp
+        WebProcess/WebPage/DrawingAreaImpl.cpp
+    )
+endif ()
 
 list(APPEND WebKit_MESSAGES_IN_FILES
     UIProcess/API/wpe/CompositingManagerProxy.messages.in

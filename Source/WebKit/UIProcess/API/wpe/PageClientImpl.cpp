@@ -26,7 +26,11 @@
 #include "config.h"
 #include "PageClientImpl.h"
 
+#if PLATFORM(WPE) && USE(TEXTURE_MAPPER)
 #include "AcceleratedDrawingAreaProxy.h"
+#else
+#include "DrawingAreaProxyImpl.h"
+#endif
 #include "NativeWebMouseEvent.h"
 #include "NativeWebWheelEvent.h"
 #include "ScrollGestureController.h"
@@ -47,7 +51,11 @@ PageClientImpl::~PageClientImpl() = default;
 
 std::unique_ptr<DrawingAreaProxy> PageClientImpl::createDrawingAreaProxy()
 {
+#if PLATFORM(WPE) && USE(TEXTURE_MAPPER)
     return std::make_unique<AcceleratedDrawingAreaProxy>(m_view.page());
+#else
+    return std::make_unique<DrawingAreaProxyImpl>(m_view.page());
+#endif
 }
 
 void PageClientImpl::setViewNeedsDisplay(const WebCore::Region&)

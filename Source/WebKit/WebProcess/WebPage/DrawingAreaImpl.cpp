@@ -50,7 +50,8 @@ DrawingAreaImpl::~DrawingAreaImpl()
 }
 
 DrawingAreaImpl::DrawingAreaImpl(WebPage& webPage, const WebPageCreationParameters& parameters)
-    : AcceleratedDrawingArea(webPage, parameters)
+//: AcceleratedDrawingArea(webPage, parameters)
+    : DrawingArea(DrawingAreaTypeImpl, webPage)
     , m_displayTimer(RunLoop::main(), this, &DrawingAreaImpl::displayTimerFired)
 {
 #if USE(GLIB_EVENT_LOOP)
@@ -60,22 +61,26 @@ DrawingAreaImpl::DrawingAreaImpl(WebPage& webPage, const WebPageCreationParamete
 
 void DrawingAreaImpl::setNeedsDisplay()
 {
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     if (m_layerTreeHost) {
         ASSERT(m_dirtyRegion.isEmpty());
         AcceleratedDrawingArea::setNeedsDisplay();
         return;
     }
+#endif
 
     setNeedsDisplayInRect(m_webPage.bounds());
 }
 
 void DrawingAreaImpl::setNeedsDisplayInRect(const IntRect& rect)
 {
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     if (m_layerTreeHost) {
         ASSERT(m_dirtyRegion.isEmpty());
         AcceleratedDrawingArea::setNeedsDisplayInRect(rect);
         return;
     }
+#endif
 
     if (!m_isPaintingEnabled)
         return;
@@ -91,6 +96,7 @@ void DrawingAreaImpl::setNeedsDisplayInRect(const IntRect& rect)
 
 void DrawingAreaImpl::scroll(const IntRect& scrollRect, const IntSize& scrollDelta)
 {
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     if (m_layerTreeHost) {
         ASSERT(m_scrollRect.isEmpty());
         ASSERT(m_scrollOffset.isEmpty());
@@ -98,6 +104,7 @@ void DrawingAreaImpl::scroll(const IntRect& scrollRect, const IntSize& scrollDel
         AcceleratedDrawingArea::scroll(scrollRect, scrollDelta);
         return;
     }
+#endif
 
     if (!m_isPaintingEnabled)
         return;
@@ -105,8 +112,10 @@ void DrawingAreaImpl::scroll(const IntRect& scrollRect, const IntSize& scrollDel
     if (scrollRect.isEmpty())
         return;
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     if (m_previousLayerTreeHost)
         m_previousLayerTreeHost->scrollNonCompositedContents(scrollRect);
+#endif
 
     if (!m_scrollRect.isEmpty() && scrollRect != m_scrollRect) {
         unsigned scrollArea = scrollRect.width() * scrollRect.height();
@@ -151,6 +160,7 @@ void DrawingAreaImpl::scroll(const IntRect& scrollRect, const IntSize& scrollDel
 
 void DrawingAreaImpl::forceRepaint()
 {
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     if (m_inUpdateBackingStoreState) {
         m_forceRepaintAfterBackingStoreStateUpdate = true;
         return;
@@ -161,6 +171,7 @@ void DrawingAreaImpl::forceRepaint()
         AcceleratedDrawingArea::forceRepaint();
         return;
     }
+#endif
 
     m_isWaitingForDidUpdate = false;
     if (m_isPaintingEnabled) {
@@ -180,13 +191,16 @@ void DrawingAreaImpl::updatePreferences(const WebPreferencesStore& store)
     settings.setAcceleratedCompositingForFixedPositionEnabled(settings.acceleratedCompositingEnabled());
 #endif
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     m_alwaysUseCompositing = settings.acceleratedCompositingEnabled() && settings.forceCompositingMode();
     if (m_alwaysUseCompositing && !m_layerTreeHost)
         enterAcceleratedCompositingMode(nullptr);
+#endif
 }
 
 void DrawingAreaImpl::setRootCompositingLayer(GraphicsLayer* graphicsLayer)
 {
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     if (m_layerTreeHost) {
         AcceleratedDrawingArea::setRootCompositingLayer(graphicsLayer);
 
@@ -202,25 +216,35 @@ void DrawingAreaImpl::setRootCompositingLayer(GraphicsLayer* graphicsLayer)
         }
         return;
     }
+#endif
 
     if (!graphicsLayer)
         return;
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     // We're actually entering accelerated compositing mode.
     enterAcceleratedCompositingMode(graphicsLayer);
+#endif
 }
 
 void DrawingAreaImpl::updateBackingStoreState(uint64_t stateID, bool respondImmediately, float deviceScaleFactor, const WebCore::IntSize& size, const WebCore::IntSize& scrollOffset)
 {
-    if (stateID != m_backingStoreStateID && !m_layerTreeHost)
+    if (stateID != m_backingStoreStateID
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
+        && !m_layerTreeHost
+#endif
+        )
         m_dirtyRegion = IntRect(IntPoint(), size);
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     AcceleratedDrawingArea::updateBackingStoreState(stateID, respondImmediately, deviceScaleFactor, size, scrollOffset);
+#endif
 
     if (m_forceRepaintAfterBackingStoreStateUpdate)
         forceRepaint();
 }
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
 void DrawingAreaImpl::didUpdateBackingStoreState()
 {
     // The UI process has updated to a new backing store state. Any Update messages we sent before
@@ -251,13 +275,16 @@ void DrawingAreaImpl::sendDidUpdateBackingStoreState()
 
     AcceleratedDrawingArea::sendDidUpdateBackingStoreState();
 }
+#endif
 
 void DrawingAreaImpl::didUpdate()
 {
     // We might get didUpdate messages from the UI process even after we've
     // entered accelerated compositing mode. Ignore them.
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     if (m_layerTreeHost)
         return;
+#endif
 
     m_isWaitingForDidUpdate = false;
 
@@ -265,6 +292,7 @@ void DrawingAreaImpl::didUpdate()
     displayTimerFired();
 }
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
 void DrawingAreaImpl::suspendPainting()
 {
     AcceleratedDrawingArea::suspendPainting();
@@ -317,10 +345,13 @@ void DrawingAreaImpl::exitAcceleratedCompositingMode()
         m_webPage.send(Messages::DrawingAreaProxy::Update(m_backingStoreStateID, updateInfo));
     }
 }
+#endif
 
 void DrawingAreaImpl::scheduleDisplay()
 {
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     ASSERT(!m_layerTreeHost);
+#endif
 
     if (m_isWaitingForDidUpdate)
         return;
@@ -344,7 +375,9 @@ void DrawingAreaImpl::displayTimerFired()
 
 void DrawingAreaImpl::display()
 {
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     ASSERT(!m_layerTreeHost);
+#endif
     ASSERT(!m_isWaitingForDidUpdate);
     ASSERT(!m_inUpdateBackingStoreState);
 
@@ -354,19 +387,23 @@ void DrawingAreaImpl::display()
     if (m_dirtyRegion.isEmpty())
         return;
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     if (m_shouldSendDidUpdateBackingStoreState) {
         sendDidUpdateBackingStoreState();
         return;
     }
+#endif
 
     UpdateInfo updateInfo;
     display(updateInfo);
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     if (m_layerTreeHost) {
         // The call to update caused layout which turned on accelerated compositing.
         // Don't send an Update message in this case.
         return;
     }
+#endif
 
     m_webPage.send(Messages::DrawingAreaProxy::Update(m_backingStoreStateID, updateInfo));
     m_isWaitingForDidUpdate = true;
@@ -396,7 +433,9 @@ static bool shouldPaintBoundsRect(const IntRect& bounds, const Vector<IntRect>& 
 void DrawingAreaImpl::display(UpdateInfo& updateInfo)
 {
     ASSERT(!m_isPaintingSuspended);
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     ASSERT(!m_layerTreeHost);
+#endif
     ASSERT(!m_webPage.size().isEmpty());
 
     m_webPage.layoutIfNeeded();
@@ -404,8 +443,10 @@ void DrawingAreaImpl::display(UpdateInfo& updateInfo)
 
     // The layout may have put the page into accelerated compositing mode. If the LayerTreeHost is
     // in charge of displaying, we have nothing more to do.
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     if (m_layerTreeHost)
         return;
+#endif
 
     updateInfo.viewSize = m_webPage.size();
     updateInfo.deviceScaleFactor = m_webPage.corePage()->deviceScaleFactor();

@@ -37,7 +37,7 @@
 #if PLATFORM(COCOA)
 #include "RemoteLayerTreeDrawingArea.h"
 #include "TiledCoreAnimationDrawingArea.h"
-#elif PLATFORM(WPE)
+#elif PLATFORM(WPE) && USE(TEXTURE_MAPPER)
 #include "AcceleratedDrawingArea.h"
 #else
 #include "DrawingAreaImpl.h"
@@ -59,7 +59,7 @@ std::unique_ptr<DrawingArea> DrawingArea::create(WebPage& webPage, const WebPage
         return std::make_unique<RemoteLayerTreeDrawingArea>(webPage, parameters);
 #else
     case DrawingAreaTypeImpl:
-#if PLATFORM(WPE)
+#if PLATFORM(WPE) && USE(TEXTURE_MAPPER)
         return std::make_unique<AcceleratedDrawingArea>(webPage, parameters);
 #else
         return std::make_unique<DrawingAreaImpl>(webPage, parameters);

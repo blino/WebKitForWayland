@@ -49,7 +49,8 @@ using namespace WebCore;
 namespace WebKit {
 
 DrawingAreaProxyImpl::DrawingAreaProxyImpl(WebPageProxy& webPageProxy)
-    : AcceleratedDrawingAreaProxy(webPageProxy)
+//    : AcceleratedDrawingAreaProxy(webPageProxy)
+    : DrawingAreaProxy(DrawingAreaTypeImpl, webPageProxy)
     , m_discardBackingStoreTimer(RunLoop::current(), this, &DrawingAreaProxyImpl::discardBackingStore)
 {
 #if USE(GLIB_EVENT_LOOP)
@@ -65,6 +66,7 @@ void DrawingAreaProxyImpl::paint(BackingStore::PlatformGraphicsContext context, 
 {
     unpaintedRegion = rect;
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     if (isInAcceleratedCompositingMode())
         return;
 
@@ -97,6 +99,7 @@ void DrawingAreaProxyImpl::paint(BackingStore::PlatformGraphicsContext context, 
             return;
         }
     }
+#endif
 
     m_backingStore->paint(context, rect);
     unpaintedRegion.subtract(IntRect(IntPoint(), m_backingStore->size()));
@@ -130,11 +133,13 @@ void DrawingAreaProxyImpl::update(uint64_t backingStoreStateID, const UpdateInfo
 
 void DrawingAreaProxyImpl::didUpdateBackingStoreState(uint64_t backingStoreStateID, const UpdateInfo& updateInfo, const LayerTreeContext& layerTreeContext)
 {
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     AcceleratedDrawingAreaProxy::didUpdateBackingStoreState(backingStoreStateID, updateInfo, layerTreeContext);
     if (isInAcceleratedCompositingMode()) {
         ASSERT(!m_backingStore);
         return;
     }
+#endif
 
     // If we have a backing store the right size, reuse it.
     if (m_backingStore && (m_backingStore->size() != updateInfo.viewSize || m_backingStore->deviceScaleFactor() != updateInfo.deviceScaleFactor))
@@ -148,7 +153,9 @@ void DrawingAreaProxyImpl::exitAcceleratedCompositingMode(uint64_t backingStoreS
     if (backingStoreStateID < m_currentBackingStoreStateID)
         return;
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     AcceleratedDrawingAreaProxy::exitAcceleratedCompositingMode();
+#endif
 
     incorporateUpdate(updateInfo);
 }
@@ -174,11 +181,13 @@ void DrawingAreaProxyImpl::incorporateUpdate(const UpdateInfo& updateInfo)
     m_webPageProxy.setViewNeedsDisplay(damageRegion);
 }
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
 void DrawingAreaProxyImpl::enterAcceleratedCompositingMode(const LayerTreeContext& layerTreeContext)
 {
     m_backingStore = nullptr;
     AcceleratedDrawingAreaProxy::enterAcceleratedCompositingMode(layerTreeContext);
 }
+#endif
 
 void DrawingAreaProxyImpl::discardBackingStoreSoon()
 {
@@ -197,7 +206,9 @@ void DrawingAreaProxyImpl::discardBackingStore()
     if (!m_backingStore)
         return;
     m_backingStore = nullptr;
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     backingStoreStateDidChange(DoNotRespondImmediately);
+#endif
 }
 
 DrawingAreaProxyImpl::DrawingMonitor::DrawingMonitor(WebPageProxy& webPage)

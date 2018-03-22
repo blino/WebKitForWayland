@@ -27,6 +27,8 @@
 #include "config.h"
 #include "AcceleratedDrawingArea.h"
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
+
 #include "DrawingAreaProxyMessages.h"
 #include "LayerTreeHost.h"
 #include "UpdateInfo.h"
@@ -488,3 +490,5 @@ void AcceleratedDrawingArea::attachViewOverlayGraphicsLayer(Frame* frame, Graphi
 }
 
 } // namespace WebKit
+
+#endif // USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)

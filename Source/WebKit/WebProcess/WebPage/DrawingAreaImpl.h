@@ -37,7 +37,7 @@ namespace WebKit {
 class ShareableBitmap;
 class UpdateInfo;
 
-class DrawingAreaImpl final : public AcceleratedDrawingArea {
+class DrawingAreaImpl final : public DrawingArea {
 public:
     DrawingAreaImpl(WebPage&, const WebPageCreationParameters&);
     virtual ~DrawingAreaImpl();
@@ -58,12 +58,14 @@ private:
     void didUpdate() override;
 
     // AcceleratedDrawingArea
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     void suspendPainting() override;
     void sendDidUpdateBackingStoreState() override;
     void didUpdateBackingStoreState() override;
 
     void enterAcceleratedCompositingMode(WebCore::GraphicsLayer*) override;
     void exitAcceleratedCompositingMode() override;
+#endif
 
     void scheduleDisplay();
     void displayTimerFired();
@@ -82,6 +84,16 @@ private:
     bool m_forceRepaintAfterBackingStoreStateUpdate { false };
 
     RunLoop::Timer<DrawingAreaImpl> m_displayTimer;
+
+#if !(USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER))
+    void scheduleCompositingLayerFlush() { }
+    void scheduleCompositingLayerFlushImmediately() { };
+
+    // ??? Add matching methods
+    uint64_t m_backingStoreStateID { 0 };
+    bool m_isPaintingEnabled { true };
+    bool m_isPaintingSuspended { false };
+#endif
 };
 
 } // namespace WebKit

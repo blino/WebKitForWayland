@@ -26,6 +26,8 @@
 #include "config.h"
 #include "AcceleratedSurface.h"
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
+
 #include "WebPage.h"
 #include <WebCore/PlatformDisplay.h>
 
@@ -82,3 +84,5 @@ bool AcceleratedSurface::resize(const IntSize& size)
 }
 
 } // namespace WebKit
+
+#endif // USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)

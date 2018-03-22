@@ -26,7 +26,8 @@
 #ifndef DrawingAreaProxyImpl_h
 #define DrawingAreaProxyImpl_h
 
-#include "AcceleratedDrawingAreaProxy.h"
+//#include "AcceleratedDrawingAreaProxy.h"
+#include "DrawingAreaProxy.h"
 #include "BackingStore.h"
 #include "DrawingAreaProxy.h"
 #include <wtf/RunLoop.h>
@@ -37,7 +38,8 @@ class Region;
 
 namespace WebKit {
 
-class DrawingAreaProxyImpl final : public AcceleratedDrawingAreaProxy {
+//class DrawingAreaProxyImpl final : public AcceleratedDrawingAreaProxy {
+class DrawingAreaProxyImpl final : public DrawingAreaProxy {
 public:
     explicit DrawingAreaProxyImpl(WebPageProxy&);
     virtual ~DrawingAreaProxyImpl();
@@ -55,7 +57,15 @@ private:
 
     void incorporateUpdate(const UpdateInfo&);
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     void enterAcceleratedCompositingMode(const LayerTreeContext&) override;
+#else
+    void sizeDidChange() { }
+    void deviceScaleFactorDidChange() { };
+
+    // ??? Add methods
+    uint64_t m_currentBackingStoreStateID { 0 };
+#endif
 
     void discardBackingStoreSoon();
     void discardBackingStore();
