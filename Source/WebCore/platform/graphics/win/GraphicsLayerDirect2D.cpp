@@ -26,7 +26,7 @@
 #include "config.h"
 #include "GraphicsLayerDirect2D.h"
 
-#if USE(DIRECT2D)
+#if USE(DIRECT2D) || USE(CAIRO)
 
 #include "DisplayList.h"
 #include "GraphicsLayerFactory.h"

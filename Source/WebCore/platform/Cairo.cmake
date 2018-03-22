@@ -23,6 +23,12 @@ list(APPEND WebCore_SOURCES
     platform/graphics/cairo/TransformationMatrixCairo.cpp
 )
 
+if (NOT USE_TEXTURE_MAPPER)
+    list(APPEND WebCore_SOURCES
+        platform/graphics/win/GraphicsLayerDirect2D.cpp
+    )
+endif ()
+
 list(APPEND WebCore_LIBRARIES
     ${CAIRO_LIBRARIES}
 )
