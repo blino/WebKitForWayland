@@ -299,6 +299,7 @@ void MediaPlayerPrivateGStreamer::loadFull(const String& urlString, const gchar*
     m_player->readyStateChanged();
     m_volumeAndMuteInitialized = false;
     m_durationAtEOS = MediaTime::invalidTime();
+    m_hasTaintedOrigin = std::nullopt;
 
     if (!m_delayingLoad)
         commitLoad();
@@ -2902,6 +2903,17 @@ bool MediaPlayerPrivateGStreamer::canSaveMediaData() const
 
     return false;
 }
+
+std::optional<bool> MediaPlayerPrivateGStreamer::wouldTaintOrigin(const SecurityOrigin&) const
+{
+    // Ideally the given origin should always be verified with
+    // webKitSrcWouldTaintOrigin() instead of only checking it for
+    // adaptive-streaming-statistics. We can't do this yet because HLS fragments
+    // are currently downloaded independently from WebKit.
+    // See also https://bugs.webkit.org/show_bug.cgi?id=189967.
+    return m_hasTaintedOrigin;
+}
+
 
 }
 

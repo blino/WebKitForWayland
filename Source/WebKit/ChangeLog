@@ -1,3 +1,448 @@
+2018-12-13  Adrian Perez de Castro  <aperez@igalia.com>
+
+        Unreviewed. Update OptionsWPE.cmake for the 2.22.3 release.
+
+        * wpe/NEWS: Add release notes for 2.22.3.
+
+2018-12-13  Adrian Perez de Castro  <aperez@igalia.com>
+
+        Unreviewed. Update OptionsGTK.cmake for the 2.22.5 release.
+
+        * gtk/NEWS: Add release notes for 2.22.5.
+
+2018-12-06  Carlos Eduardo Ramalho  <cadubentzen@gmail.com>
+
+        REGRESSION(r231043): [GTK] Undefined references to WebCore::LayerRepresentation::* with -DENABLE_OPENGL=OFF builds
+        https://bugs.webkit.org/show_bug.cgi?id=191997
+
+        Reviewed by Philippe Normand.
+
+        Fix build with -DENABLE_OPENGL=OFF and -DENABLE_VIDEO=OFF.
+
+        * Shared/WebEventConversion.cpp:
+        (WebKit::WebKit2PlatformWheelEvent::WebKit2PlatformWheelEvent): add required #if ENABLE(ASYNC_SCROLLING)
+
+2018-09-19  Chris Dumez  <cdumez@apple.com>
+
+        Crash under WebPageProxy::decidePolicyForNavigationAction()
+        https://bugs.webkit.org/show_bug.cgi?id=189763
+        <rdar://problem/44597111>
+
+        Reviewed by Alex Christensen.
+
+        Update WebNavigationState::navigation() / WebNavigationState::takeNavigation()
+        to return a pointer instead of a reference as we have evidence that they can
+        return null. I kept the debug assertions to try and catch the cases where we
+        return null but at least we stop crashing in release builds.
+
+        * UIProcess/WebNavigationState.cpp:
+        (WebKit::WebNavigationState::navigation):
+        (WebKit::WebNavigationState::takeNavigation):
+        * UIProcess/WebNavigationState.h:
+        * UIProcess/WebPageProxy.cpp:
+        (WebKit::WebPageProxy::didStartProvisionalLoadForFrame):
+        (WebKit::WebPageProxy::didReceiveServerRedirectForProvisionalLoadForFrame):
+        (WebKit::WebPageProxy::didCommitLoadForFrame):
+        (WebKit::WebPageProxy::didFinishDocumentLoadForFrame):
+        (WebKit::WebPageProxy::didFinishLoadForFrame):
+        (WebKit::WebPageProxy::didFailLoadForFrame):
+        (WebKit::WebPageProxy::didSameDocumentNavigationForFrame):
+        (WebKit::WebPageProxy::decidePolicyForNavigationAction):
+        (WebKit::WebPageProxy::decidePolicyForResponse):
+
+2018-11-16  Jiewen Tan  <jiewen_tan@apple.com>
+
+        Disallow loading webarchives as iframes
+        https://bugs.webkit.org/show_bug.cgi?id=191728
+        <rdar://problem/45524528>
+
+        Reviewed by Youenn Fablet.
+
+        * UIProcess/WebPageProxy.cpp:
+        (WebKit::WebPageProxy::unableToImplementPolicy):
+        Add a check to prevent null pointer dereference.
+
+2018-12-03  Darin Adler  <darin@apple.com>
+
+        Alignment padding needs to be zeroed out in IPC::Encoder
+        https://bugs.webkit.org/show_bug.cgi?id=192304
+
+        Reviewed by Chris Dumez.
+
+        Might be useful to make a regression test for this, but I couldn't find any
+        other tests for this code.
+
+        * Platform/IPC/Encoder.cpp:
+        (IPC::Encoder::grow): Use std::memset to zero-fill padding bytes.
+
+        * UIProcess/mac/LegacySessionStateCoding.cpp:
+        (WebKit::HistoryEntryDataEncoder::grow): Ditto.
+
+2018-11-20  Jeff Miller  <jeffm@apple.com>
+
+        Return nullptr immediately if the key doesn't exist in the HashMap.
+        https://bugs.webkit.org/show_bug.cgi?id=191841
+
+        Reviewed by Chris Dumez.
+
+        * Shared/API/APIDictionary.h:
+
+2018-11-21  Adrian Perez de Castro  <aperez@igalia.com>
+
+        Unreviewed. Update OptionsWPE.cmake and NEWS for 2.22.2 release.
+
+        * wpe/NEWS: Add release notes for 2.22.2.
+
+2018-11-21  Adrian Perez de Castro  <aperez@igalia.com>
+
+        Unreviewed. Update OptionsGTK.cmake and NEWS for 2.22.4 release.
+
+        * gtk/NEWS: Add release notes for 2.22.4.
+
+2018-11-06  Adrian Perez de Castro  <aperez@igalia.com>
+
+        Unreviewed. Update OptionsWPE.cmake and NEWS for 2.22.1 release.
+
+        * wpe/NEWS: Add release notes for 2.22.1.
+
+2018-10-29  Adrian Perez de Castro  <aperez@igalia.com>
+
+        Unreviewed. Update OptionsGTK.cmake and NEWS for 2.22.3 release.
+
+        * gtk/NEWS: Add release notes for 2.22.3.
+
+2018-09-11  Michael Catanzaro  <mcatanzaro@igalia.com>
+
+        Unreviewed, attempt to fix Apple builds after r235903
+        https://bugs.webkit.org/show_bug.cgi?id=188872
+
+        If it really needs to be inlined, it will need to move to the header....
+
+        * UIProcess/WebPageProxy.cpp:
+        (WebKit::WebPageProxy::pageClient const):
+
+2018-09-11  Michael Catanzaro  <mcatanzaro@igalia.com>
+
+        Unreviewed, fix build after r235903
+        https://bugs.webkit.org/show_bug.cgi?id=188872
+
+        This broke all ports except GTK. Need to add a missing header.
+
+        * UIProcess/PageClient.h:
+
+2018-09-11  Michael Catanzaro  <mcatanzaro@igalia.com>
+
+        WebPageProxy should hold a WeakPtr to its PageClient
+        https://bugs.webkit.org/show_bug.cgi?id=188872
+
+        Reviewed by Ryosuke Niwa.
+
+        This ensures the PageClient reference is always valid when used.
+
+        * UIProcess/Cocoa/WebPageProxyCocoa.mm:
+        (WebKit::WebPageProxy::startDrag):
+        (WebKit::WebPageProxy::setDragCaretRect):
+        * UIProcess/PageClient.h:
+        * UIProcess/WebPageProxy.cpp:
+        (WebKit::PageClientProtector::PageClientProtector):
+        (WebKit::PageClientProtector::~PageClientProtector):
+        (WebKit::WebPageProxy::WebPageProxy):
+        (WebKit::m_resetRecentCrashCountTimer):
+        (WebKit::WebPageProxy::pageClient const):
+        (WebKit::WebPageProxy::reattachToWebProcess):
+        (WebKit::WebPageProxy::initializeWebPage):
+        (WebKit::WebPageProxy::close):
+        (WebKit::WebPageProxy::didChangeBackForwardList):
+        (WebKit::WebPageProxy::willGoToBackForwardListItem):
+        (WebKit::WebPageProxy::shouldKeepCurrentBackForwardListItemInList):
+        (WebKit::WebPageProxy::setViewNeedsDisplay):
+        (WebKit::WebPageProxy::requestScroll):
+        (WebKit::WebPageProxy::viewScrollPosition const):
+        (WebKit::WebPageProxy::updateActivityState):
+        (WebKit::WebPageProxy::activityStateDidChange):
+        (WebKit::WebPageProxy::viewDidEnterWindow):
+        (WebKit::WebPageProxy::dispatchActivityStateChange):
+        (WebKit::WebPageProxy::layerHostingModeDidChange):
+        (WebKit::WebPageProxy::viewSize const):
+        (WebKit::WebPageProxy::startDrag):
+        (WebKit::WebPageProxy::didPerformDragOperation):
+        (WebKit::WebPageProxy::processNextQueuedMouseEvent):
+        (WebKit::WebPageProxy::findPlugin):
+        (WebKit::WebPageProxy::handleTouchEventSynchronously):
+        (WebKit::WebPageProxy::handleTouchEvent):
+        (WebKit::WebPageProxy::preferencesDidChange):
+        (WebKit::WebPageProxy::didCreateMainFrame):
+        (WebKit::WebPageProxy::didCreateSubframe):
+        (WebKit::WebPageProxy::didStartProgress):
+        (WebKit::WebPageProxy::didChangeProgress):
+        (WebKit::WebPageProxy::didFinishProgress):
+        (WebKit::WebPageProxy::didDestroyNavigation):
+        (WebKit::WebPageProxy::didStartProvisionalLoadForFrame):
+        (WebKit::WebPageProxy::didReceiveServerRedirectForProvisionalLoadForFrame):
+        (WebKit::WebPageProxy::willPerformClientRedirectForFrame):
+        (WebKit::WebPageProxy::didCancelClientRedirectForFrame):
+        (WebKit::WebPageProxy::didChangeProvisionalURLForFrame):
+        (WebKit::WebPageProxy::didFailProvisionalLoadForFrame):
+        (WebKit::WebPageProxy::didCommitLoadForFrame):
+        (WebKit::WebPageProxy::didFinishDocumentLoadForFrame):
+        (WebKit::WebPageProxy::didFinishLoadForFrame):
+        (WebKit::WebPageProxy::didFailLoadForFrame):
+        (WebKit::WebPageProxy::didSameDocumentNavigationForFrame):
+        (WebKit::WebPageProxy::didReceiveTitleForFrame):
+        (WebKit::WebPageProxy::didFirstVisuallyNonEmptyLayoutForFrame):
+        (WebKit::WebPageProxy::didReachLayoutMilestone):
+        (WebKit::WebPageProxy::didDisplayInsecureContentForFrame):
+        (WebKit::WebPageProxy::didRunInsecureContentForFrame):
+        (WebKit::WebPageProxy::frameDidBecomeFrameSet):
+        (WebKit::WebPageProxy::decidePolicyForNavigationAction):
+        (WebKit::WebPageProxy::decidePolicyForNewWindowAction):
+        (WebKit::WebPageProxy::decidePolicyForResponse):
+        (WebKit::WebPageProxy::unableToImplementPolicy):
+        (WebKit::WebPageProxy::didNavigateWithNavigationData):
+        (WebKit::WebPageProxy::didPerformClientRedirect):
+        (WebKit::WebPageProxy::didPerformServerRedirect):
+        (WebKit::WebPageProxy::didUpdateHistoryTitle):
+        (WebKit::WebPageProxy::closePage):
+        (WebKit::WebPageProxy::setWindowFrame):
+        (WebKit::WebPageProxy::getWindowFrame):
+        (WebKit::WebPageProxy::getWindowFrameWithCallback):
+        (WebKit::WebPageProxy::screenToRootView):
+        (WebKit::WebPageProxy::rootViewToScreen):
+        (WebKit::WebPageProxy::syncRootViewToScreen):
+        (WebKit::WebPageProxy::accessibilityScreenToRootView):
+        (WebKit::WebPageProxy::rootViewToAccessibilityScreen):
+        (WebKit::WebPageProxy::didChangeViewportProperties):
+        (WebKit::WebPageProxy::runOpenPanel):
+        (WebKit::WebPageProxy::showShareSheet):
+        (WebKit::WebPageProxy::handleDownloadRequest):
+        (WebKit::WebPageProxy::didChangeContentSize):
+        (WebKit::WebPageProxy::showColorPicker):
+        (WebKit::WebPageProxy::showDataListSuggestions):
+        (WebKit::WebPageProxy::compositionWasCanceled):
+        (WebKit::WebPageProxy::registerInsertionUndoGrouping):
+        (WebKit::WebPageProxy::canUndoRedo):
+        (WebKit::WebPageProxy::executeUndoRedo):
+        (WebKit::WebPageProxy::clearAllEditCommands):
+        (WebKit::WebPageProxy::setTextIndicator):
+        (WebKit::WebPageProxy::clearTextIndicator):
+        (WebKit::WebPageProxy::setTextIndicatorAnimationProgress):
+        (WebKit::WebPageProxy::showPopupMenu):
+        (WebKit::WebPageProxy::showContextMenu):
+        (WebKit::WebPageProxy::registerEditCommand):
+        (WebKit::WebPageProxy::canUndo):
+        (WebKit::WebPageProxy::canRedo):
+        (WebKit::WebPageProxy::setToolTip):
+        (WebKit::WebPageProxy::setCursor):
+        (WebKit::WebPageProxy::setCursorHiddenUntilMouseMoves):
+        (WebKit::WebPageProxy::didReceiveEvent):
+        (WebKit::WebPageProxy::resetState):
+        (WebKit::WebPageProxy::resetStateAfterProcessExited):
+        (WebKit::WebPageProxy::creationParameters):
+        (WebKit::WebPageProxy::enterAcceleratedCompositingMode):
+        (WebKit::WebPageProxy::exitAcceleratedCompositingMode):
+        (WebKit::WebPageProxy::updateAcceleratedCompositingMode):
+        (WebKit::WebPageProxy::requestGeolocationPermissionForFrame):
+        (WebKit::WebPageProxy::recommendedScrollbarStyleDidChange):
+        (WebKit::WebPageProxy::didChangeScrollOffsetPinningForMainFrame):
+        (WebKit::WebPageProxy::didFinishLoadingDataForCustomContentProvider):
+        (WebKit::WebPageProxy::updateBackingStoreDiscardableState):
+        (WebKit::WebPageProxy::showCorrectionPanel):
+        (WebKit::WebPageProxy::dismissCorrectionPanel):
+        (WebKit::WebPageProxy::dismissCorrectionPanelSoon):
+        (WebKit::WebPageProxy::recordAutocorrectionResponse):
+        (WebKit::WebPageProxy::useDarkAppearance const):
+        (WebKit::WebPageProxy::showDictationAlternativeUI):
+        (WebKit::WebPageProxy::removeDictationAlternatives):
+        (WebKit::WebPageProxy::dictationAlternatives):
+        (WebKit::WebPageProxy::setEditableElementIsFocused):
+        (WebKit::WebPageProxy::takeViewSnapshot):
+        (WebKit::WebPageProxy::wrapCryptoKey):
+        (WebKit::WebPageProxy::unwrapCryptoKey):
+        (WebKit::WebPageProxy::signedPublicKeyAndChallengeString):
+        (WebKit::WebPageProxy::navigationGestureDidBegin):
+        (WebKit::WebPageProxy::navigationGestureWillEnd):
+        (WebKit::WebPageProxy::navigationGestureDidEnd):
+        (WebKit::WebPageProxy::willRecordNavigationSnapshot):
+        (WebKit::WebPageProxy::navigationGestureSnapshotWasRemoved):
+        (WebKit::WebPageProxy::isPlayingMediaDidChange):
+        (WebKit::WebPageProxy::videoControlsManagerDidChange):
+        (WebKit::WebPageProxy::handleControlledElementIDResponse const):
+        (WebKit::WebPageProxy::didPerformImmediateActionHitTest):
+        (WebKit::WebPageProxy::immediateActionAnimationControllerForHitTestResult):
+        (WebKit::WebPageProxy::didHandleAcceptedCandidate):
+        (WebKit::WebPageProxy::addPlaybackTargetPickerClient):
+        (WebKit::WebPageProxy::removePlaybackTargetPickerClient):
+        (WebKit::WebPageProxy::showPlaybackTargetPicker):
+        (WebKit::WebPageProxy::playbackTargetPickerClientStateDidChange):
+        (WebKit::WebPageProxy::setMockMediaPlaybackTargetPickerEnabled):
+        (WebKit::WebPageProxy::setMockMediaPlaybackTargetPickerState):
+        (WebKit::WebPageProxy::didChangeBackgroundColor):
+        (WebKit::WebPageProxy::didRestoreScrollPosition):
+        (WebKit::WebPageProxy::userInterfaceLayoutDirection):
+        (WebKit::WebPageProxy::didInsertAttachment):
+        (WebKit::WebPageProxy::didRemoveAttachment):
+        * UIProcess/WebPageProxy.h:
+        * UIProcess/gstreamer/WebPageProxyGStreamer.cpp:
+        (WebKit::WebPageProxy::requestInstallMissingMediaPlugins):
+        * UIProcess/gtk/WebPageProxyGtk.cpp:
+        (WebKit::WebPageProxy::viewWidget):
+        (WebKit::WebPageProxy::editorStateChanged):
+        * UIProcess/ios/WebPageProxyIOS.mm:
+        (WebKit::WebPageProxy::computeCustomFixedPositionRect const):
+        (WebKit::WebPageProxy::overflowScrollViewWillStartPanGesture):
+        (WebKit::WebPageProxy::overflowScrollViewDidScroll):
+        (WebKit::WebPageProxy::overflowScrollWillStartScroll):
+        (WebKit::WebPageProxy::overflowScrollDidEndScroll):
+        (WebKit::WebPageProxy::didCommitLayerTree):
+        (WebKit::WebPageProxy::layerTreeCommitComplete):
+        (WebKit::WebPageProxy::didReceivePositionInformation):
+        (WebKit::WebPageProxy::saveImageToLibrary):
+        (WebKit::WebPageProxy::interpretKeyEvent):
+        (WebKit::WebPageProxy::registerWebProcessAccessibilityToken):
+        (WebKit::WebPageProxy::couldNotRestorePageState):
+        (WebKit::WebPageProxy::restorePageState):
+        (WebKit::WebPageProxy::restorePageCenterAndScale):
+        (WebKit::WebPageProxy::didGetTapHighlightGeometries):
+        (WebKit::WebPageProxy::startAssistingNode):
+        (WebKit::WebPageProxy::stopAssistingNode):
+        (WebKit::WebPageProxy::showInspectorHighlight):
+        (WebKit::WebPageProxy::hideInspectorHighlight):
+        (WebKit::WebPageProxy::showInspectorIndication):
+        (WebKit::WebPageProxy::hideInspectorIndication):
+        (WebKit::WebPageProxy::enableInspectorNodeSearch):
+        (WebKit::WebPageProxy::disableInspectorNodeSearch):
+        (WebKit::WebPageProxy::setAcceleratedCompositingRootLayer):
+        (WebKit::WebPageProxy::showPlaybackTargetPicker):
+        (WebKit::WebPageProxy::commitPotentialTapFailed):
+        (WebKit::WebPageProxy::didNotHandleTapAsClick):
+        (WebKit::WebPageProxy::didCompleteSyntheticClick):
+        (WebKit::WebPageProxy::disableDoubleTapGesturesDuringTapIfNecessary):
+        (WebKit::WebPageProxy::editorStateChanged):
+        (WebKit::WebPageProxy::showValidationMessage):
+        (WebKit::WebPageProxy::didHandleStartDataInteractionRequest):
+        (WebKit::WebPageProxy::didHandleAdditionalDragItemsRequest):
+        (WebKit::WebPageProxy::didConcludeEditDataInteraction):
+        (WebKit::WebPageProxy::didRequestPasswordForQuickLookDocumentInMainFrame):
+        * UIProcess/mac/WebPageProxyMac.mm:
+        (WebKit::WebPageProxy::windowAndViewFramesChanged):
+        (WebKit::WebPageProxy::insertDictatedTextAsync):
+        (WebKit::WebPageProxy::setPromisedDataForImage):
+        (WebKit::WebPageProxy::didPerformDictionaryLookup):
+        (WebKit::WebPageProxy::registerWebProcessAccessibilityToken):
+        (WebKit::WebPageProxy::makeFirstResponder):
+        (WebKit::WebPageProxy::assistiveTechnologyMakeFirstResponder):
+        (WebKit::WebPageProxy::colorSpace):
+        (WebKit::WebPageProxy::pluginFocusOrWindowFocusChanged):
+        (WebKit::WebPageProxy::setPluginComplexTextInputState):
+        (WebKit::WebPageProxy::executeSavedCommandBySelector):
+        (WebKit::WebPageProxy::intrinsicContentSizeDidChange):
+        (WebKit::WebPageProxy::setAcceleratedCompositingRootLayer):
+        (WebKit::WebPageProxy::acceleratedCompositingRootLayer const):
+        (WebKit::WebPageProxy::showPDFContextMenu):
+        (WebKit::WebPageProxy::showTelephoneNumberMenu):
+        (WebKit::WebPageProxy::boundsOfLayerInLayerBackedWindowCoordinates const):
+        (WebKit::WebPageProxy::editorStateChanged):
+        (WebKit::WebPageProxy::startWindowDrag):
+        (WebKit::WebPageProxy::platformWindow):
+        (WebKit::WebPageProxy::rootViewToWindow):
+        (WebKit::WebPageProxy::showValidationMessage):
+        (WebKit::WebPageProxy::inspectorAttachmentView):
+        (WebKit::WebPageProxy::remoteObjectRegistry):
+        * UIProcess/win/WebPageProxyWin.cpp:
+        (WebKit::WebPageProxy::viewWidget):
+        * UIProcess/wpe/WebPageProxyWPE.cpp:
+        (WebKit::WebPageProxy::viewBackend):
+
+2018-10-25  Zan Dobersek  <zdobersek@igalia.com>
+
+        [GTK][AC] Resizing the window doesn't always update the visible rect
+        https://bugs.webkit.org/show_bug.cgi?id=189743
+
+        Reviewed by Michael Catanzaro.
+
+        Disassociate resizing that can be done on an AcceleratedSurface object
+        between "host resizes" and "client resizes".
+
+        The former is done from ThreadedCoordinatedLayerTreeHost directly, and
+        is currently used only for GTK on X11, where a new pixmap object is
+        created on each resize, which affects the context ID that is based on
+        that pixmap object's address.
+
+        The latter is done from the composition thread. It's used for GTK on
+        Wayland and WPE. In both cases, the underlying window object does not
+        change on each resize, but it's necessary to perform the actual resize
+        on the composition thread.
+
+        So far it hasn't been performed there, which ended up pushing sizes of
+        the WebKit view and the underlying window object out of sync during
+        resizing, leaving parts of window unrendered.
+
+        * Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.cpp:
+        (WebKit::ThreadedCompositor::renderLayerTree):
+        * Shared/CoordinatedGraphics/threadedcompositor/ThreadedCompositor.h:
+        * WebProcess/WebPage/AcceleratedSurface.cpp:
+        (WebKit::AcceleratedSurface::hostResize):
+        (WebKit::AcceleratedSurface::resize): Deleted.
+        * WebProcess/WebPage/AcceleratedSurface.h:
+        (WebKit::AcceleratedSurface::clientResize):
+        * WebProcess/WebPage/CoordinatedGraphics/ThreadedCoordinatedLayerTreeHost.cpp:
+        (WebKit::ThreadedCoordinatedLayerTreeHost::deviceOrPageScaleFactorChanged):
+        (WebKit::ThreadedCoordinatedLayerTreeHost::sizeDidChange):
+        * WebProcess/WebPage/CoordinatedGraphics/ThreadedCoordinatedLayerTreeHost.h:
+        * WebProcess/WebPage/gtk/AcceleratedSurfaceWayland.cpp:
+        (WebKit::AcceleratedSurfaceWayland::clientResize):
+        (WebKit::AcceleratedSurfaceWayland::resize): Deleted.
+        * WebProcess/WebPage/gtk/AcceleratedSurfaceWayland.h:
+        * WebProcess/WebPage/gtk/AcceleratedSurfaceX11.cpp:
+        (WebKit::AcceleratedSurfaceX11::hostResize):
+        (WebKit::AcceleratedSurfaceX11::resize): Deleted.
+        * WebProcess/WebPage/gtk/AcceleratedSurfaceX11.h:
+        * WebProcess/WebPage/wpe/AcceleratedSurfaceWPE.cpp:
+        (WebKit::AcceleratedSurfaceWPE::clientResize):
+        (WebKit::AcceleratedSurfaceWPE::resize): Deleted.
+        * WebProcess/WebPage/wpe/AcceleratedSurfaceWPE.h:
+
+2018-10-16  Philippe Normand  <pnormand@igalia.com>
+
+        [GLib] Build error with RemoteInspector disabled
+        https://bugs.webkit.org/show_bug.cgi?id=190623
+
+        Reviewed by Michael Catanzaro.
+
+        Compilation guards added to ensure the build still works when the
+        Remote WebInspector has been disabled.
+
+        * UIProcess/API/glib/WebKitAutomationSession.cpp:
+        * UIProcess/API/glib/WebKitAutomationSessionPrivate.h:
+        * UIProcess/RemoteWebInspectorProxy.cpp:
+
+2018-10-09  Claudio Saavedra  <csaavedra@igalia.com>
+
+        [WPE] Explicitly link against gmodule where used
+        https://bugs.webkit.org/show_bug.cgi?id=190398
+
+        Reviewed by Michael Catanzaro.
+
+        * PlatformWPE.cmake:
+
+2018-10-08  Konstantin Tokarev  <annulen@yandex.ru>
+
+        Validation in Connection::readBytesFromSocket() is too aggressive
+        https://bugs.webkit.org/show_bug.cgi?id=190281
+
+        Reviewed by Michael Catanzaro.
+
+        Since r217206 Connection::readBytesFromSocket() validates size of
+        control message. However, it compares cmsg_len with attachmentMaxAmount,
+        while Connection::sendOutgoingMessage() computes it as
+        CMSG_LEN(sizeof(int) * attachmentFDBufferLength) where
+        attachmentFDBufferLength <= attachmentMaxAmount. This mismatch between
+        sender and receiver leads to possibility of assertion failure with large
+        number of attachments, e.g. here 62 attachments have cmsg_length == 264.
+
+        * Platform/IPC/unix/ConnectionUnix.cpp:
+        (IPC::readBytesFromSocket):
+
 2018-10-02  Adrian Perez de Castro  <aperez@igalia.com>
 
         Unreviewed. Update OptionsWPE.cmake and NEWS for the 2.22.0 release.

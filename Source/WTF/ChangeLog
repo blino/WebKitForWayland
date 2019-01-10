@@ -1,3 +1,77 @@
+2018-12-14  Darin Adler  <darin@apple.com>
+
+        Verify size is valid in USE_SYSTEM_MALLOC version of tryAllocateZeroedVirtualPages
+        https://bugs.webkit.org/show_bug.cgi?id=192738
+        rdar://problem/37502342
+
+        Reviewed by Mark Lam.
+
+        * wtf/Gigacage.cpp:
+        (Gigacage::tryAllocateZeroedVirtualPages): Added a RELEASE_ASSERT just
+        like the one in tryLargeZeroedMemalignVirtual in bmalloc.
+
+2018-10-09  Mark Lam  <mark.lam@apple.com>
+
+        StringTypeAdapter constructor is not properly enforcing String::MaxLength.
+        https://bugs.webkit.org/show_bug.cgi?id=190392
+        <rdar://problem/45116210>
+
+        Reviewed by Saam Barati.
+
+        Previously, the StringTypeAdapter constructor for a UChar* string was summing the
+        unsigned length of the source string without an overflow check.  We now make that
+        length a size_t which removes this issue, and assert that it's within
+        String::MaxLength thereafter.
+
+        Also made the StringTypeAdapter constructor for a LChar* string behave in an
+        equivalent manner for consistency.  In both cases, we'll crash in a RELEASE_ASSERT
+        if the source string length exceeds String::MaxLength.
+
+        * wtf/text/StringConcatenate.h:
+
+2018-10-03  Mark Lam  <mark.lam@apple.com>
+
+        Make string MaxLength for all WTF and JS strings consistently equal to INT_MAX.
+        https://bugs.webkit.org/show_bug.cgi?id=190187
+        <rdar://problem/42512909>
+
+        Reviewed by Michael Saboff.
+
+        * wtf/text/StringConcatenate.h:
+        (WTF::tryMakeStringFromAdapters):
+        (WTF::sumWithOverflow): Deleted.
+        * wtf/text/StringImpl.h:
+        * wtf/text/WTFString.h:
+
+2018-10-26  Alicia Boya García  <aboya@igalia.com>
+
+        [MSE][WTF][Media] Invalid MediaTime should be falsy
+        https://bugs.webkit.org/show_bug.cgi?id=190893
+
+        Reviewed by Jer Noble.
+
+        This patch modifies the definition of MediaTime so that invalid times
+        are evaluated to false in the context of a boolean expression.
+
+        * wtf/MediaTime.cpp:
+        (WTF::MediaTime::operator! const):
+        (WTF::MediaTime::operator bool const):
+
+2018-10-18  Alicia Boya García  <aboya@igalia.com>
+
+        [Media] Use nanoseconds as MaximumTimeScale
+        https://bugs.webkit.org/show_bug.cgi?id=190631
+
+        1e9 is a much more useful timescale than the previous one 2^31-1.
+        Unlike 2^31-1, which is a prime number, nanosecond scale is pretty
+        common among some formats like WebM and frameworks like GStreamer
+        where base 10 timescale is common... and it's those big timescales the
+        ones that are usually scaled up to MaximumTimeScale.
+
+        Reviewed by Jer Noble.
+
+        * wtf/MediaTime.cpp:
+
 2018-09-05  Brent Fulgham  <bfulgham@apple.com>
 
         The width of an empty or nullptr TextRun should be zero

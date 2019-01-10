@@ -1,3 +1,720 @@
+2018-12-18  Mark Lam  <mark.lam@apple.com>
+
+        JSPropertyNameEnumerator should cache the iterated object's structure only after getting its property names.
+        https://bugs.webkit.org/show_bug.cgi?id=192464
+        <rdar://problem/46519455>
+
+        Reviewed by Saam Barati.
+
+        This is because the process of getting its property names may cause some lazy
+        properties to be reified, and the structure will change.  This is needed in order
+        for get_direct_pname to work correctly.
+
+        * runtime/JSPropertyNameEnumerator.h:
+        (JSC::propertyNameEnumerator):
+
+2018-12-14  Darin Adler  <darin@apple.com>
+
+        LiteralParser has a bunch of uses of String::format with untrusted data
+        https://bugs.webkit.org/show_bug.cgi?id=108883
+        rdar://problem/13666409
+
+        Reviewed by Mark Lam.
+
+        * runtime/LiteralParser.cpp:
+        (JSC::LiteralParser<CharType>::Lexer::lex): Use makeString instead of String::format.
+        (JSC::LiteralParser<CharType>::Lexer::lexStringSlow): Ditto.
+        (JSC::LiteralParser<CharType>::parse): Ditto.
+
+        * runtime/LiteralParser.h:
+        (JSC::LiteralParser::getErrorMessage): Use string concatenation instead of
+        String::format.
+
+2018-12-13  Mark Lam  <mark.lam@apple.com>
+
+        Add a missing exception check.
+        https://bugs.webkit.org/show_bug.cgi?id=192626
+        <rdar://problem/46662163>
+
+        Reviewed by Keith Miller.
+
+        * runtime/ScopedArguments.h:
+
+2018-12-10  Mark Lam  <mark.lam@apple.com>
+
+        PropertyAttribute needs a CustomValue bit.
+        https://bugs.webkit.org/show_bug.cgi?id=191993
+        <rdar://problem/46264467>
+
+        Reviewed by Saam Barati.
+
+        This is because GetByIdStatus needs to distinguish CustomValue properties from
+        other types, and its only means of doing so is via the property's attributes.
+        Previously, there's nothing in the property's attributes that can indicate that
+        the property is a CustomValue.
+
+        We fix this by doing the following:
+
+        1. Added a PropertyAttribute::CustomValue bit.
+        2. Added a PropertyAttribute::CustomAccessorOrValue convenience bit mask that is
+           CustomAccessor | CustomValue.
+
+        3. Since CustomGetterSetter properties are only set via JSObject::putDirectCustomAccessor(),
+           we added a check in JSObject::putDirectCustomAccessor() to see if the attributes
+           bits include PropertyAttribute::CustomAccessor.  If not, then the property
+           must be a CustomValue, and we'll add the PropertyAttribute::CustomValue bit
+           to the attributes bits.
+
+           This ensures that the property attributes is sufficient to tell us if the
+           property contains a CustomGetterSetter.
+
+        4. Updated all checks for PropertyAttribute::CustomAccessor to check for
+           PropertyAttribute::CustomAccessorOrValue instead if their intent is to check
+           for the presence of a CustomGetterSetter as opposed to checking specifically
+           for one that is used as a CustomAccessor.
+
+           This includes all the Structure transition code that needs to capture the
+           attributes change when a CustomValue has been added.
+
+        5. Filtered out the PropertyAttribute::CustomValue bit in PropertyDescriptor.
+           The fact that we're using a CustomGetterSetter as a CustomValue should remain
+           invisible to the descriptor.  This is because the descriptor should describe
+           a CustomValue no differently from a plain value.
+
+        6. Added some asserts to ensure that property attributes are as expected, and to
+           document some invariants.
+
+        * bytecode/GetByIdStatus.cpp:
+        (JSC::GetByIdStatus::computeFromLLInt):
+        (JSC::GetByIdStatus::computeForStubInfoWithoutExitSiteFeedback):
+        (JSC::GetByIdStatus::computeFor):
+        * bytecode/InByIdStatus.cpp:
+        (JSC::InByIdStatus::computeForStubInfoWithoutExitSiteFeedback):
+        * bytecode/PropertyCondition.cpp:
+        (JSC::PropertyCondition::isStillValidAssumingImpurePropertyWatchpoint const):
+        * bytecode/PutByIdStatus.cpp:
+        (JSC::PutByIdStatus::computeFor):
+        * runtime/JSFunction.cpp:
+        (JSC::getCalculatedDisplayName):
+        * runtime/JSObject.cpp:
+        (JSC::JSObject::putDirectCustomAccessor):
+        (JSC::JSObject::putDirectNonIndexAccessor):
+        (JSC::JSObject::putDirectIndexSlowOrBeyondVectorLength):
+        * runtime/JSObject.h:
+        (JSC::JSObject::putDirectIndex):
+        (JSC::JSObject::fillCustomGetterPropertySlot):
+        (JSC::JSObject::putDirect):
+        * runtime/JSObjectInlines.h:
+        (JSC::JSObject::putDirectInternal):
+        * runtime/PropertyDescriptor.cpp:
+        (JSC::PropertyDescriptor::setDescriptor):
+        (JSC::PropertyDescriptor::setCustomDescriptor):
+        (JSC::PropertyDescriptor::setAccessorDescriptor):
+        * runtime/PropertySlot.h:
+        (JSC::PropertySlot::setCustomGetterSetter):
+
+2018-09-27  Mark Lam  <mark.lam@apple.com>
+
+        JITMathIC should not use integer offsets into machine code.
+        https://bugs.webkit.org/show_bug.cgi?id=190030
+        <rdar://problem/44803307>
+
+        Reviewed by Saam Barati.
+
+        We'll replace them with CodeLocation smart pointers instead.
+
+        * jit/JITMathIC.h:
+        (JSC::isProfileEmpty):
+
+2018-09-27  Mark Lam  <mark.lam@apple.com>
+
+        ByValInfo should not use integer offsets.
+        https://bugs.webkit.org/show_bug.cgi?id=190070
+        <rdar://problem/44803430>
+
+        Reviewed by Saam Barati.
+
+        Also moved some fields around to allow the ByValInfo struct to be more densely packed.
+
+        * bytecode/ByValInfo.h:
+        (JSC::ByValInfo::ByValInfo):
+        * jit/JIT.cpp:
+        (JSC::JIT::link):
+        * jit/JITOpcodes.cpp:
+        (JSC::JIT::privateCompileHasIndexedProperty):
+        * jit/JITOpcodes32_64.cpp:
+        (JSC::JIT::privateCompileHasIndexedProperty):
+        * jit/JITPropertyAccess.cpp:
+        (JSC::JIT::privateCompileGetByVal):
+        (JSC::JIT::privateCompileGetByValWithCachedId):
+        (JSC::JIT::privateCompilePutByVal):
+        (JSC::JIT::privateCompilePutByValWithCachedId):
+
+2018-09-27  Mark Lam  <mark.lam@apple.com>
+
+        DFG::OSREntry::m_machineCodeOffset should be a CodeLocation.
+        https://bugs.webkit.org/show_bug.cgi?id=190054
+        <rdar://problem/44803543>
+
+        Reviewed by Saam Barati.
+
+        * dfg/DFGJITCode.h:
+        (JSC::DFG::JITCode::appendOSREntryData):
+        * dfg/DFGJITCompiler.cpp:
+        (JSC::DFG::JITCompiler::noticeOSREntry):
+        * dfg/DFGOSREntry.cpp:
+        (JSC::DFG::OSREntryData::dumpInContext const):
+        (JSC::DFG::prepareOSREntry):
+        * dfg/DFGOSREntry.h:
+        * runtime/JSCPtrTag.h:
+
+2018-09-27  Saam barati  <sbarati@apple.com>
+
+        DFG::OSRExit::m_patchableCodeOffset should not be an int
+        https://bugs.webkit.org/show_bug.cgi?id=190066
+        <rdar://problem/39498244>
+
+        Reviewed by Mark Lam.
+
+        * dfg/DFGJITCompiler.cpp:
+        (JSC::DFG::JITCompiler::linkOSRExits):
+        (JSC::DFG::JITCompiler::link):
+        * dfg/DFGOSRExit.cpp:
+        (JSC::DFG::OSRExit::codeLocationForRepatch const):
+        (JSC::DFG::OSRExit::compileOSRExit):
+        (JSC::DFG::OSRExit::setPatchableCodeOffset): Deleted.
+        (JSC::DFG::OSRExit::getPatchableCodeOffsetAsJump const): Deleted.
+        (JSC::DFG::OSRExit::correctJump): Deleted.
+        * dfg/DFGOSRExit.h:
+        * dfg/DFGOSRExitCompilationInfo.h:
+
+2018-09-27  Saam barati  <sbarati@apple.com>
+
+        Don't use int offsets in StructureStubInfo
+        https://bugs.webkit.org/show_bug.cgi?id=190064
+        <rdar://problem/44784719>
+
+        Reviewed by Mark Lam.
+
+        * bytecode/InlineAccess.cpp:
+        (JSC::linkCodeInline):
+        * bytecode/StructureStubInfo.h:
+        (JSC::StructureStubInfo::slowPathCallLocation):
+        (JSC::StructureStubInfo::doneLocation):
+        (JSC::StructureStubInfo::slowPathStartLocation):
+        * jit/JITInlineCacheGenerator.cpp:
+        (JSC::JITInlineCacheGenerator::finalize):
+
+2018-09-18  Mark Lam  <mark.lam@apple.com>
+
+        Ensure that ForInContexts are invalidated if their loop local is over-written.
+        https://bugs.webkit.org/show_bug.cgi?id=189571
+        <rdar://problem/44402277>
+
+        Reviewed by Saam Barati.
+
+        Instead of hunting down every place in the BytecodeGenerator that potentially
+        needs to invalidate an enclosing ForInContext (if one exists), we simply iterate
+        the bytecode range of the loop body when the ForInContext is popped, and
+        invalidate the context if we ever find the loop temp variable over-written.
+
+        This has 2 benefits:
+        1. It ensures that every type of opcode that can write to the loop temp will be
+           handled appropriately, not just the op_mov that we've hunted down.
+        2. It avoids us having to check the BytecodeGenerator's m_forInContextStack
+           every time we emit an op_mov (or other opcodes that can write to a local)
+           even when we're not inside a for-in loop.
+
+        JSC benchmarks show that that this change is performance neutral.
+
+        * bytecompiler/BytecodeGenerator.cpp:
+        (JSC::BytecodeGenerator::pushIndexedForInScope):
+        (JSC::BytecodeGenerator::popIndexedForInScope):
+        (JSC::BytecodeGenerator::pushStructureForInScope):
+        (JSC::BytecodeGenerator::popStructureForInScope):
+        (JSC::ForInContext::finalize):
+        (JSC::StructureForInContext::finalize):
+        (JSC::IndexedForInContext::finalize):
+        (JSC::BytecodeGenerator::invalidateForInContextForLocal): Deleted.
+        * bytecompiler/BytecodeGenerator.h:
+        (JSC::ForInContext::ForInContext):
+        (JSC::ForInContext::bodyBytecodeStartOffset const):
+        (JSC::StructureForInContext::StructureForInContext):
+        (JSC::IndexedForInContext::IndexedForInContext):
+        * bytecompiler/NodesCodegen.cpp:
+        (JSC::PostfixNode::emitResolve):
+        (JSC::PrefixNode::emitResolve):
+        (JSC::ReadModifyResolveNode::emitBytecode):
+        (JSC::AssignResolveNode::emitBytecode):
+        (JSC::EmptyLetExpression::emitBytecode):
+        (JSC::ForInNode::emitLoopHeader):
+        (JSC::ForOfNode::emitBytecode):
+        (JSC::BindingNode::bindValue const):
+        (JSC::AssignmentElementNode::bindValue const):
+        * runtime/CommonSlowPaths.cpp:
+        (JSC::SLOW_PATH_DECL):
+
+2018-09-14  Mark Lam  <mark.lam@apple.com>
+
+        Refactor some ForInContext code for better encapsulation.
+        https://bugs.webkit.org/show_bug.cgi?id=189626
+        <rdar://problem/44466415>
+
+        Reviewed by Keith Miller.
+
+        1. Add a ForInContext::m_type field to store the context type.  This does not
+           increase the class size, but eliminates the need for a virtual call to get the
+           type.
+
+           Note: we still need a virtual destructor because we'll be mingling
+           IndexedForInContexts and StructureForInContexts in the BytecodeGenerator::m_forInContextStack.
+
+        2. Add ForInContext::isIndexedForInContext() and ForInContext::isStructureForInContext()
+           convenience methods.
+
+        3. Add ForInContext::asIndexedForInContext() and ForInContext::asStructureForInContext()
+           to do the casting to the subclass types.  This ensures that we'll properly
+           assert that the casting is legal.
+
+        * bytecompiler/BytecodeGenerator.cpp:
+        (JSC::BytecodeGenerator::emitGetByVal):
+        (JSC::BytecodeGenerator::popIndexedForInScope):
+        (JSC::BytecodeGenerator::popStructureForInScope):
+        * bytecompiler/BytecodeGenerator.h:
+        (JSC::ForInContext::type const):
+        (JSC::ForInContext::isIndexedForInContext const):
+        (JSC::ForInContext::isStructureForInContext const):
+        (JSC::ForInContext::asIndexedForInContext):
+        (JSC::ForInContext::asStructureForInContext):
+        (JSC::ForInContext::ForInContext):
+        (JSC::StructureForInContext::StructureForInContext):
+        (JSC::IndexedForInContext::IndexedForInContext):
+        (JSC::ForInContext::~ForInContext): Deleted.
+
+2018-11-15  Mark Lam  <mark.lam@apple.com>
+
+        RegExpObject's collectMatches should not be using JSArray::push to fill in its match results.
+        https://bugs.webkit.org/show_bug.cgi?id=191730
+        <rdar://problem/46048517>
+
+        Reviewed by Saam Barati.
+
+        According to the spec https://www.ecma-international.org/ecma-262/9.0/index.html#sec-regexp.prototype-@@match,
+        the RegExp match results are filled in using the spec's CreateDataProperty()
+        function which does not consult the prototype for setters.  JSArray:push()
+        consults the prototype for setters.  We should be using putDirectIndex() instead.
+
+        * runtime/RegExpObjectInlines.h:
+        (JSC::collectMatches):
+
+2018-11-15  Mark Lam  <mark.lam@apple.com>
+
+        RegExp operations should not take fast patch if lastIndex is not numeric.
+        https://bugs.webkit.org/show_bug.cgi?id=191731
+        <rdar://problem/46017305>
+
+        Reviewed by Saam Barati.
+
+        This is because if lastIndex is an object with a valueOf() method, it can execute
+        arbitrary code which may have side effects, and side effects are not permitted by
+        the RegExp fast paths.
+
+        * builtins/RegExpPrototype.js:
+        (globalPrivate.hasObservableSideEffectsForRegExpMatch):
+        (overriddenName.string_appeared_here.search):
+        (globalPrivate.hasObservableSideEffectsForRegExpSplit):
+        (intrinsic.RegExpTestIntrinsic.test):
+        * builtins/StringPrototype.js:
+        (globalPrivate.hasObservableSideEffectsForStringReplace):
+
+2018-11-16  Filip Pizlo  <fpizlo@apple.com>
+
+        All users of ArrayBuffer should agree on the same max size
+        https://bugs.webkit.org/show_bug.cgi?id=191771
+
+        Reviewed by Mark Lam.
+
+        Array buffers cannot be larger than 0x7fffffff, because otherwise loading typedArray.length in the DFG/FTL would produce
+        a uint32 or would require a signedness check, neither of which sounds reasonable. It's better to just bound their max size
+        instead.
+
+        * runtime/ArrayBuffer.cpp:
+        (JSC::ArrayBufferContents::ArrayBufferContents):
+        (JSC::ArrayBufferContents::tryAllocate):
+        (JSC::ArrayBufferContents::transferTo):
+        (JSC::ArrayBufferContents::copyTo):
+        (JSC::ArrayBufferContents::shareWith):
+        * runtime/ArrayBuffer.h:
+        * wasm/WasmMemory.cpp:
+        (JSC::Wasm::Memory::tryCreate):
+        (JSC::Wasm::Memory::grow):
+        * wasm/WasmPageCount.h:
+
+2018-11-27  Mark Lam  <mark.lam@apple.com>
+
+        [Re-landing] NaNs read from Wasm code needs to be be purified.
+        https://bugs.webkit.org/show_bug.cgi?id=191056
+        <rdar://problem/45660341>
+
+        Reviewed by Filip Pizlo.
+
+        * wasm/js/WebAssemblyModuleRecord.cpp:
+        (JSC::WebAssemblyModuleRecord::link):
+
+2018-10-03  Mark Lam  <mark.lam@apple.com>
+
+        Make string MaxLength for all WTF and JS strings consistently equal to INT_MAX.
+        https://bugs.webkit.org/show_bug.cgi?id=190187
+        <rdar://problem/42512909>
+
+        Reviewed by Michael Saboff.
+
+        Allowing different max string lengths at each level opens up opportunities for
+        bugs to creep in.  With 2 different max length values, it is more difficult to
+        keep the story straight on how we do overflow / bounds checks at each place in
+        the code.  It's also difficult to tell if a seemingly valid check at the WTF level
+        will have bad ramifications at the JSC level.  Also, it's also not meaningful to
+        support a max length > INT_MAX.  To eliminate this class of bugs, we'll
+        standardize on a MaxLength of INT_MAX at all levels.
+
+        We'll also standardize the way we do length overflow checks on using
+        CheckedArithmetic, and add some asserts to document the assumptions of the code.
+
+        * runtime/FunctionConstructor.cpp:
+        (JSC::constructFunctionSkippingEvalEnabledCheck):
+        - Fix OOM error handling which crashed a test after the new MaxLength was applied.
+        * runtime/JSString.h:
+        (JSC::JSString::finishCreation):
+        (JSC::JSString::createHasOtherOwner):
+        (JSC::JSString::setLength):
+        * runtime/JSStringInlines.h:
+        (JSC::jsMakeNontrivialString):
+        * runtime/Operations.h:
+        (JSC::jsString):
+
+2018-08-27  Mark Lam  <mark.lam@apple.com>
+
+        Fix exception throwing code so that topCallFrame and topEntryFrame stay true to their names.
+        https://bugs.webkit.org/show_bug.cgi?id=188577
+        <rdar://problem/42985684>
+
+        Reviewed by Saam Barati.
+
+        1. Introduced CallFrame::convertToStackOverflowFrame() which converts the current
+           (top) CallFrame (which may not have a valid callee) into a StackOverflowFrame.
+
+           The StackOverflowFrame is a sentinel frame that the low level code (exception
+           throwing code, stack visitor, and stack unwinding code) will know to skip
+           over.  The StackOverflowFrame will also have a valid JSCallee so that client
+           code can compute the globalObject or VM from this frame.
+
+           As a result, client code that throws StackOverflowErrors no longer need to
+           compute the caller frame to throw from: it just converts the top frame into
+           a StackOverflowFrame and everything should *Just Work*.
+
+        2. NativeCallFrameTracerWithRestore is now obsolete.
+
+           Instead, client code should always call convertToStackOverflowFrame() on the
+           frame before instantiating a NativeCallFrameTracer with it.
+
+           This means that topCallFrame will always point to the top CallFrame (which
+           may be a StackOverflowFrame), and topEntryFrame will always point to the top
+           EntryFrame.  We'll never temporarily point them to the previous EntryFrame
+           (which we used to do with NativeCallFrameTracerWithRestore).
+
+        3. genericUnwind() and Interpreter::unwind() will now always unwind from the top
+           CallFrame, and will know how to handle a StackOverflowFrame if they see one.
+
+           This obsoletes the UnwindStart flag.
+
+        * CMakeLists.txt:
+        * JavaScriptCore.xcodeproj/project.pbxproj:
+        * Sources.txt:
+        * debugger/Debugger.cpp:
+        (JSC::Debugger::pauseIfNeeded):
+        * interpreter/CallFrame.cpp:
+        (JSC::CallFrame::callerFrame const):
+        (JSC::CallFrame::unsafeCallerFrame const):
+        (JSC::CallFrame::convertToStackOverflowFrame):
+        (JSC::CallFrame::callerFrame): Deleted.
+        (JSC::CallFrame::unsafeCallerFrame): Deleted.
+        * interpreter/CallFrame.h:
+        (JSC::ExecState::iterate):
+        * interpreter/CallFrameInlines.h: Added.
+        (JSC::CallFrame::isStackOverflowFrame const):
+        (JSC::CallFrame::isWasmFrame const):
+        * interpreter/EntryFrame.h: Added.
+        (JSC::EntryFrame::vmEntryRecordOffset):
+        (JSC::EntryFrame::calleeSaveRegistersBufferOffset):
+        * interpreter/FrameTracers.h:
+        (JSC::NativeCallFrameTracerWithRestore::NativeCallFrameTracerWithRestore): Deleted.
+        (JSC::NativeCallFrameTracerWithRestore::~NativeCallFrameTracerWithRestore): Deleted.
+        * interpreter/Interpreter.cpp:
+        (JSC::Interpreter::unwind):
+        * interpreter/Interpreter.h:
+        * interpreter/StackVisitor.cpp:
+        (JSC::StackVisitor::StackVisitor):
+        * interpreter/StackVisitor.h:
+        (JSC::StackVisitor::visit):
+        (JSC::StackVisitor::topEntryFrameIsEmpty const):
+        * interpreter/VMEntryRecord.h:
+        (JSC::VMEntryRecord::callee const):
+        (JSC::EntryFrame::vmEntryRecordOffset): Deleted.
+        (JSC::EntryFrame::calleeSaveRegistersBufferOffset): Deleted.
+        * jit/AssemblyHelpers.h:
+        * jit/JITExceptions.cpp:
+        (JSC::genericUnwind):
+        * jit/JITExceptions.h:
+        * jit/JITOperations.cpp:
+        * llint/LLIntOffsetsExtractor.cpp:
+        * llint/LLIntSlowPaths.cpp:
+        (JSC::LLInt::LLINT_SLOW_PATH_DECL):
+        * llint/LowLevelInterpreter.asm:
+        * llint/LowLevelInterpreter32_64.asm:
+        * llint/LowLevelInterpreter64.asm:
+        * runtime/CallData.cpp:
+        * runtime/CommonSlowPaths.cpp:
+        (JSC::throwArityCheckStackOverflowError):
+        (JSC::SLOW_PATH_DECL):
+        * runtime/CommonSlowPathsExceptions.cpp: Removed.
+        * runtime/CommonSlowPathsExceptions.h: Removed.
+        * runtime/Completion.cpp:
+        (JSC::evaluateWithScopeExtension):
+        * runtime/JSGeneratorFunction.h:
+        * runtime/JSGlobalObject.cpp:
+        (JSC::JSGlobalObject::init):
+        (JSC::JSGlobalObject::visitChildren):
+        * runtime/JSGlobalObject.h:
+        (JSC::JSGlobalObject::stackOverflowFrameCallee const):
+        * runtime/VM.cpp:
+        (JSC::VM::throwException):
+        * runtime/VM.h:
+        * runtime/VMInlines.h:
+        (JSC::VM::topJSCallFrame const):
+
+2018-08-22  Michael Saboff  <msaboff@apple.com>
+
+        https://bugs.webkit.org/show_bug.cgi?id=188859
+        Eliminate dead code operationThrowDivideError() and operationThrowOutOfBoundsAccessError()
+
+        Rubber-stamped by Saam Barati.
+
+        Deleted these two functions.
+
+        * jit/JITOperations.cpp:
+        * jit/JITOperations.h:
+
+2018-10-26  Mark Lam  <mark.lam@apple.com>
+
+        Fix missing edge cases with JSGlobalObjects having a bad time.
+        https://bugs.webkit.org/show_bug.cgi?id=189028
+        <rdar://problem/45204939>
+
+        Reviewed by Saam Barati.
+
+        Consider the following scenario:
+
+            let object O1 (of global G1) have an indexing type that is not SlowPut.
+            let global G2 have a bad time.
+            let object O2 (of global G2) be set as the prototype of O1.
+            let object O3 (of global G2) have indexed accessors.
+
+        In the existing code, if we set O3 as O2's prototype, we'll have a bug where
+        O1 will not be made aware that that there are indexed accessors in its prototype
+        chain.
+
+        In this patch, we solve this issue by introducing a new invariant:
+
+            A prototype chain is considered to possibly have indexed accessors if any
+            object in the chain belongs to a global object that is having a bad time.
+
+        We apply this invariant as follows:
+
+        1. Enhance JSGlobalObject::haveABadTime() to also check if other global objects are
+           affected by it having a bad time.  If so, it also ensures that those affected
+           global objects have a bad time.
+
+           The original code for JSGlobalObject::haveABadTime() uses a ObjectsWithBrokenIndexingFinder
+           to find all objects affected by the global object having a bad time.  We enhance
+           ObjectsWithBrokenIndexingFinder to also check for the possibility that any global
+           objects may be affected by other global objects having a bad time i.e.
+
+                let g1 = global1
+                let g2 = global2
+                let o1 = an object in g1
+                let o2 = an object in g2
+
+                let g1 have a bad time
+                g2 is affected if
+                    o1 is in the prototype chain of o2,
+                    and o2 may be a prototype.
+
+           If the ObjectsWithBrokenIndexingFinder does find the possibility of other global
+           objects being affected, it will abort its heap scan and let haveABadTime() take
+           a slow path to do a more complete multi global object scan.
+
+           The slow path works as follows:
+
+           1. Iterate the heap and record the graph of all global object dependencies.
+
+              For each global object, record the list of other global objects that are
+              affected by it.
+
+           2. Compute a list of global objects that need to have a bad time using the
+              current global object dependency graph.
+
+           3. For each global object in the list of affected global objects, fire their
+              HaveABadTime watchpoint and convert all their array structures to the
+              SlowPut alternatives.
+
+           4. Re-run ObjectsWithBrokenIndexingFinder to find all objects that are affected
+              by any of the globals in the list from (2).
+
+        2. Enhance Structure::mayInterceptIndexedAccesses() to also return true if the
+           structure's global object is having a bad time.
+
+        Note: there are 3 scenarios that we need to consider:
+
+            let g1 = global1
+            let g2 = global2
+            let o1 = an object in g1
+            let o2 = an object in g2
+
+            Scenario 1: o2 is a prototype, and
+                        g1 has a bad time after o1 is inserted into the o2's prototype chain.
+
+            Scenario 2: o2 is a prototype, and
+                        o1 is inserted into the o2's prototype chain after g1 has a bad time.
+
+            Scenario 3: o2 is NOT a prototype, and
+                        o1 is inserted into the o2's prototype chain after g1 has a bad time.
+
+            For scenario 1, when g1 has a bad time, we need to also make sure g2 has
+            a bad time.  This is handled by enhancement 1 above.
+
+            For scenario 2, when o1 is inserted into o2's prototype chain, we need to check
+            if o1's global object has a bad time.  If so, then we need to make sure o2's
+            global also has a bad time (because o2 is a prototype) and convert o2's
+            storage type to SlowPut.  This is handled by enhancement 2 above in conjunction
+            with JSObject::setPrototypeDirect().
+
+            For scenario 3, when o1 is inserted into o2's prototype chain, we need to check
+            if o1's global object has a bad time.  If so, then we only need to convert o2's
+            storage type to SlowPut (because o2 is NOT a prototype).  This is handled by
+            enhancement 2 above.
+
+        3. Also add $vm.isHavingABadTime(), $vm.createGlobalObject() to enable us to
+           write some tests for this issue.
+
+        * runtime/JSGlobalObject.cpp:
+        (JSC::JSGlobalObject::fireWatchpointAndMakeAllArrayStructuresSlowPut):
+        (JSC::JSGlobalObject::haveABadTime):
+        * runtime/JSGlobalObject.h:
+        * runtime/JSObject.h:
+        (JSC::JSObject::mayInterceptIndexedAccesses): Deleted.
+        * runtime/JSObjectInlines.h:
+        (JSC::JSObject::mayInterceptIndexedAccesses):
+        * runtime/Structure.h:
+        * runtime/StructureInlines.h:
+        (JSC::Structure::mayInterceptIndexedAccesses const):
+        * tools/JSDollarVM.cpp:
+        (JSC::functionHaveABadTime):
+        (JSC::functionIsHavingABadTime):
+        (JSC::functionCreateGlobalObject):
+        (JSC::JSDollarVM::finishCreation):
+
+2018-10-22  Mark Lam  <mark.lam@apple.com>
+
+        DFGAbstractValue::m_arrayModes expects IndexingMode values, not IndexingType.
+        https://bugs.webkit.org/show_bug.cgi?id=190515
+        <rdar://problem/45222379>
+
+        Reviewed by Saam Barati.
+
+        1. Fixes calls to asArrayModes() to take a structure's IndexingMode instead of
+           IndexingType.
+
+        2. DFG's compileNewArrayBuffer()'s HaveABadTime case was previously using the
+           node's indexingType (instead of indexingMode) to choose the array structure
+           to use for creating an array buffer with.  This turns out to not be an issue
+           because when the VM is in having a bad time, all the
+           arrayStructureForIndexingTypeDuringAllocation structure pointers will point to
+           the SlowPutArrayStorage structure anyway.  However, to be strictly correct,
+           we'll fix it to use the structure for the node's indexingMode.
+
+        * dfg/DFGAbstractValue.cpp:
+        (JSC::DFG::AbstractValue::set):
+        (JSC::DFG::AbstractValue::mergeOSREntryValue):
+        * dfg/DFGAbstractValue.h:
+        (JSC::DFG::AbstractValue::validate const):
+        * dfg/DFGOSRExit.cpp:
+        (JSC::DFG::OSRExit::executeOSRExit):
+        * dfg/DFGRegisteredStructureSet.cpp:
+        (JSC::DFG::RegisteredStructureSet::arrayModesFromStructures const):
+        * dfg/DFGSpeculativeJIT.cpp:
+        (JSC::DFG::SpeculativeJIT::compileNewArrayBuffer):
+
+2018-10-16  Mark Lam  <mark.lam@apple.com>
+
+        GetIndexedPropertyStorage can GC.
+        https://bugs.webkit.org/show_bug.cgi?id=190625
+        <rdar://problem/45309366>
+
+        Reviewed by Saam Barati.
+
+        This is because if the ArrayMode type is String, the DFG and FTL will be emitting
+        a call to operationResolveRope, and operationResolveRope can GC.  This patch
+        updates doesGC() to reflect this.
+
+        * dfg/DFGDoesGC.cpp:
+        (JSC::DFG::doesGC):
+
+2018-10-15  Saam Barati  <sbarati@apple.com>
+
+        JSArray::shiftCountWithArrayStorage is wrong when an array has holes
+        https://bugs.webkit.org/show_bug.cgi?id=190262
+        <rdar://problem/44986241>
+
+        Reviewed by Mark Lam.
+
+        We would take the fast path for shiftCountWithArrayStorage when the array
+        hasHoles(). However, the code for this was wrong. It'd incorrectly update
+        ArrayStorage::m_numValuesInVector. Since the hasHoles() for ArrayStorage
+        path is never taken in JetStream 2, this patch just removes that from
+        the fast path. Instead, we just fallback to the slow path when hasHoles().
+        If we find evidence that this matters for real use cases, we can
+        figure out a way to make the fast path work.
+
+        * runtime/JSArray.cpp:
+        (JSC::JSArray::shiftCountWithArrayStorage):
+
+2018-10-09  Claudio Saavedra  <csaavedra@igalia.com>
+
+        [WPE] Explicitly link against gmodule where used
+        https://bugs.webkit.org/show_bug.cgi?id=190398
+
+        Reviewed by Michael Catanzaro.
+
+        * PlatformWPE.cmake:
+
+2018-08-22  Mark Lam  <mark.lam@apple.com>
+
+        The DFG CFGSimplification phase shouldn’t jettison a block when it’s the target of both branch directions.
+        https://bugs.webkit.org/show_bug.cgi?id=188298
+        <rdar://problem/42888427>
+
+        Reviewed by Saam Barati.
+
+        In the event that both targets of a Branch is the same block, then even if we'll
+        always take one path of the branch, the other target is not unreachable because
+        it is the same target as the one in the taken path.  Hence, it should not be
+        jettisoned.
+
+        * JavaScriptCore.xcodeproj/project.pbxproj:
+        - Added DFGCFG.h which is in use and should have been added to the project.
+        * dfg/DFGCFGSimplificationPhase.cpp:
+        (JSC::DFG::CFGSimplificationPhase::run):
+
 2018-09-21  Tomas Popela  <tpopela@redhat.com>
 
         [ARM] Build broken on armv7hl after r235517

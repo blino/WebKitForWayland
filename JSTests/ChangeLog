@@ -1,3 +1,151 @@
+2018-12-19  Mark Lam  <mark.lam@apple.com>
+
+        JSPropertyNameEnumerator should cache the iterated object's structure only after getting its property names.
+        https://bugs.webkit.org/show_bug.cgi?id=192464
+        <rdar://problem/46519455>
+
+        Reviewed by Saam Barati.
+
+        This patch is about a 10% speed up on the new for-in-on-object-with-lazily-materialized-properties.js
+        microbenchmark.
+
+        * microbenchmarks/for-in-on-object-with-lazily-materialized-properties.js: Added.
+        * stress/property-name-enumerator-should-cache-structure-after-getting-property-names.js: Added.
+
+2018-12-13  Mark Lam  <mark.lam@apple.com>
+
+        Add a missing exception check.
+        https://bugs.webkit.org/show_bug.cgi?id=192626
+        <rdar://problem/46662163>
+
+        Reviewed by Keith Miller.
+
+        * stress/regress-192626.js: Added.
+
+2018-12-10  Mark Lam  <mark.lam@apple.com>
+
+        PropertyAttribute needs a CustomValue bit.
+        https://bugs.webkit.org/show_bug.cgi?id=191993
+        <rdar://problem/46264467>
+
+        Reviewed by Saam Barati.
+
+        * stress/regress-191993.js: Added.
+
+2018-09-17  Mark Lam  <mark.lam@apple.com>
+
+        Ensure that ForInContexts are invalidated if their loop local is over-written.
+        https://bugs.webkit.org/show_bug.cgi?id=189571
+        <rdar://problem/44402277>
+
+        Reviewed by Saam Barati.
+
+        * stress/regress-189571.js: Added.
+
+2018-11-15  Mark Lam  <mark.lam@apple.com>
+
+        RegExpObject's collectMatches should not be using JSArray::push to fill in its match results.
+        https://bugs.webkit.org/show_bug.cgi?id=191730
+        <rdar://problem/46048517>
+
+        Reviewed by Saam Barati.
+
+        * stress/regress-187006.js: Removed.
+          - this test is invalid because its sole purpose is to test for the non-spec
+            compliant behavior that we just fixed.
+
+        * stress/regress-191730.js: Added.
+
+2018-11-15  Mark Lam  <mark.lam@apple.com>
+
+        RegExp operations should not take fast patch if lastIndex is not numeric.
+        https://bugs.webkit.org/show_bug.cgi?id=191731
+        <rdar://problem/46017305>
+
+        Reviewed by Saam Barati.
+
+        * stress/regress-191731.js: Added.
+
+2018-11-16  Filip Pizlo  <fpizlo@apple.com>
+
+        All users of ArrayBuffer should agree on the same max size
+        https://bugs.webkit.org/show_bug.cgi?id=191771
+
+        Reviewed by Mark Lam.
+
+        * stress/big-wasm-memory-grow-no-max.js: Added.
+        (foo):
+        (catch):
+        * stress/big-wasm-memory-grow.js: Added.
+        (foo):
+        (catch):
+        * stress/big-wasm-memory.js: Added.
+        (foo):
+        (catch):
+
+2018-10-03  Mark Lam  <mark.lam@apple.com>
+
+        Make string MaxLength for all WTF and JS strings consistently equal to INT_MAX.
+        https://bugs.webkit.org/show_bug.cgi?id=190187
+        <rdar://problem/42512909>
+
+        Reviewed by Michael Saboff.
+
+        * stress/regress-190187.js: Added.
+
+2018-08-27  Mark Lam  <mark.lam@apple.com>
+
+        Fix exception throwing code so that topCallFrame and topEntryFrame stay true to their names.
+        https://bugs.webkit.org/show_bug.cgi?id=188577
+        <rdar://problem/42985684>
+
+        Reviewed by Saam Barati.
+
+        * stress/regress-188577.js: Added.
+
+2018-10-26  Mark Lam  <mark.lam@apple.com>
+
+        Fix missing edge cases with JSGlobalObjects having a bad time.
+        https://bugs.webkit.org/show_bug.cgi?id=189028
+        <rdar://problem/45204939>
+
+        Reviewed by Saam Barati.
+
+        * stress/regress-189028.js: Added.
+
+2018-10-22  Mark Lam  <mark.lam@apple.com>
+
+        DFGAbstractValue::m_arrayModes expects IndexingMode values, not IndexingType.
+        https://bugs.webkit.org/show_bug.cgi?id=190515
+        <rdar://problem/45222379>
+
+        Reviewed by Saam Barati.
+
+        * stress/regress-190515.js: Added.
+
+2018-10-15  Saam Barati  <sbarati@apple.com>
+
+        JSArray::shiftCountWithArrayStorage is wrong when an array has holes
+        https://bugs.webkit.org/show_bug.cgi?id=190262
+        <rdar://problem/44986241>
+
+        Reviewed by Mark Lam.
+
+        * stress/array-prototype-concat-of-long-spliced-arrays.js:
+        (test):
+        * stress/slice-array-storage-with-holes.js: Added.
+        (main):
+
+2018-08-22  Mark Lam  <mark.lam@apple.com>
+
+        The DFG CFGSimplification phase shouldn’t jettison a block when it’s the target of both branch directions.
+        https://bugs.webkit.org/show_bug.cgi?id=188298
+        <rdar://problem/42888427>
+
+        Reviewed by Saam Barati.
+
+        * stress/bug-188298.js: Added.
+
 2018-09-19  Saam barati  <sbarati@apple.com>
 
         AI rule for MultiPutByOffset executes its effects in the wrong order
